@@ -1,30 +1,38 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import { useState, useEffect } from 'react'
 import { LocalStorage } from '@/lib/localStorage'
 import { supabase } from '@/lib/supabase'
-import { Note } from '@/types'
+import { Note, Folder } from '@/types'
 import { extractWikiLinks } from '@/lib/wikiLinks'
 
 export function useLocalNotes(userId?: string | null) {
   const [notes, setNotes] = useState<Note[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [syncEnabled, setSyncEnabled] = useState(false)
 
-  // Load notes from local storage on mount
+  // Load notes and folders from local storage on mount
   useEffect(() => {
-    const loadLocalNotes = async () => {
+    const loadLocalData = async () => {
       try {
         setLoading(true)
-        const localNotes = await LocalStorage.getNotes()
+        const [localNotes, localFolders] = await Promise.all([
+          LocalStorage.getNotes(),
+          LocalStorage.getFolders()
+        ])
         setNotes(localNotes)
+        setFolders(localFolders)
       } catch (error) {
-        console.error('Error loading local notes:', error)
+        console.error('Error loading local data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    loadLocalNotes()
+    loadLocalData()
   }, [])
 
   // Sync with Supabase if user is logged in
@@ -139,38 +147,43 @@ export function useLocalNotes(userId?: string | null) {
     }
   }
 
-  const updateNote = async (noteId: string, updates: Partial<Note>) => {
-    try {
-      const existingNote = notes.find((n) => n.id === noteId)
-      if (!existingNote) throw new Error('Note not found')
-
-      const updatedNote = {
-        ...existingNote,
-        ...updates,
-        updated_at: new Date().toISOString(),
-      }
-
-      // Save to local storage
-      await LocalStorage.saveNote(updatedNote)
-      setNotes((prev) =>
-        prev.map((note) => (note.id === noteId ? updatedNote : note))
-      )
-
-      // Extract and update wiki links
-      if (updates.content !== undefined) {
-        const linkedTitles = extractWikiLinks(updatedNote.content)
-        await LocalStorage.updateLinksForNote(noteId, linkedTitles)
-      }
-
-      // Sync to cloud if user is logged in
-      if (userId && syncEnabled) {
-        await supabase.from('notes').update(updates).eq('id', noteId)
-      }
-
-      return { data: updatedNote, error: null }
-    } catch (error) {
-      return { data: null, error: error as Error }
+  const updateNote = (noteId: string, updates: Partial<Note>) => {
+    const existingNote = notes.find((n) => n.id === noteId)
+    if (!existingNote) {
+      return { data: null, error: new Error('Note not found') }
     }
+
+    const updatedNote = {
+      ...existingNote,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    }
+
+    // Update state IMMEDIATELY (synchronous) - this is what makes it feel instant
+    setNotes((prev) =>
+      prev.map((note) => (note.id === noteId ? updatedNote : note))
+    )
+
+    // INSTANT SAVE: Use synchronous localStorage save for immediate persistence
+    // This ensures data survives even if browser closes immediately after typing
+    LocalStorage.saveNoteSync(updatedNote)
+
+    // Fire-and-forget: extract and update wiki links in background
+    if (updates.content !== undefined) {
+      const linkedTitles = extractWikiLinks(updatedNote.content)
+      LocalStorage.updateLinksForNote(noteId, linkedTitles).catch((err) => {
+        console.error('Error updating wiki links:', err)
+      })
+    }
+
+    // Fire-and-forget: sync to cloud if user is logged in
+    if (userId && syncEnabled) {
+      supabase.from('notes').update(updates).eq('id', noteId).then(({ error }) => {
+        if (error) console.error('Error syncing note to cloud:', error)
+      })
+    }
+
+    return { data: updatedNote, error: null }
   }
 
   const deleteNote = async (noteId: string) => {
@@ -242,11 +255,119 @@ export function useLocalNotes(userId?: string | null) {
     }
   }
 
+  // Folder operations
+  const deleteFolder = async (folderId: string) => {
+    try {
+      const folder = folders.find((f) => f.id === folderId)
+      if (!folder) return { error: new Error('Folder not found') }
+
+      const deletedAt = new Date().toISOString()
+      
+      // Soft delete the folder
+      const updatedFolder: Folder = {
+        ...folder,
+        deleted_at: deletedAt,
+        updated_at: deletedAt
+      }
+      await LocalStorage.saveFolder(updatedFolder)
+      setFolders((prev) =>
+        prev.map((f) => (f.id === folderId ? updatedFolder : f))
+      )
+
+      // Soft delete all notes in this folder
+      const notesInFolder = notes.filter((n) => n.folder_id === folderId && !n.deleted_at)
+      for (const note of notesInFolder) {
+        const updatedNote = {
+          ...note,
+          deleted_at: deletedAt,
+          updated_at: deletedAt
+        }
+        await LocalStorage.saveNote(updatedNote)
+        setNotes((prev) =>
+          prev.map((n) => (n.id === note.id ? updatedNote : n))
+        )
+      }
+
+      return { error: null }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
+  const restoreFolder = async (folderId: string) => {
+    try {
+      const folder = folders.find((f) => f.id === folderId)
+      if (!folder) return { error: new Error('Folder not found') }
+
+      const updatedAt = new Date().toISOString()
+      
+      // Restore the folder
+      const updatedFolder: Folder = {
+        ...folder,
+        deleted_at: null,
+        updated_at: updatedAt
+      }
+      await LocalStorage.saveFolder(updatedFolder)
+      setFolders((prev) =>
+        prev.map((f) => (f.id === folderId ? updatedFolder : f))
+      )
+
+      // Restore all notes that were in this folder (notes with this folder_id that are deleted)
+      const deletedNotesInFolder = notes.filter(
+        (n) => n.folder_id === folderId && n.deleted_at
+      )
+      for (const note of deletedNotesInFolder) {
+        const updatedNote = {
+          ...note,
+          deleted_at: null,
+          updated_at: updatedAt
+        }
+        await LocalStorage.saveNote(updatedNote)
+        setNotes((prev) =>
+          prev.map((n) => (n.id === note.id ? updatedNote : n))
+        )
+      }
+
+      return { error: null }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
+  const permanentlyDeleteFolder = async (folderId: string) => {
+    try {
+      // Permanently delete all notes in this folder first
+      const notesInFolder = notes.filter((n) => n.folder_id === folderId)
+      for (const note of notesInFolder) {
+        await LocalStorage.deleteNote(note.id)
+      }
+      setNotes((prev) => prev.filter((n) => n.folder_id !== folderId))
+
+      // Delete the folder
+      await LocalStorage.deleteFolder(folderId)
+      setFolders((prev) => prev.filter((f) => f.id !== folderId))
+
+      return { error: null }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
+  const reloadFolders = async () => {
+    try {
+      const localFolders = await LocalStorage.getFolders()
+      setFolders(localFolders)
+    } catch (error) {
+      console.error('Error reloading folders:', error)
+    }
+  }
+
   const enableSync = () => setSyncEnabled(true)
   const disableSync = () => setSyncEnabled(false)
 
   return {
     notes: notes.filter(n => !n.deleted_at),
+    folders: folders.filter(f => !f.deleted_at),
     loading,
     syncing,
     syncEnabled,
@@ -255,7 +376,12 @@ export function useLocalNotes(userId?: string | null) {
     deleteNote,
     restoreNote,
     permanentlyDeleteNote,
+    deleteFolder,
+    restoreFolder,
+    permanentlyDeleteFolder,
+    reloadFolders,
     trashNotes: notes.filter(n => n.deleted_at),
+    trashFolders: folders.filter(f => f.deleted_at),
     enableSync,
     disableSync,
   }

@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import localforage from 'localforage'
 import { Note, Folder, Tag, Link, Attachment } from '@/types'
 
@@ -19,15 +22,90 @@ const STORES = {
   ATTACHMENT_FILES: 'attachment_files', // Store actual blobs here
 }
 
+// Synchronous localStorage keys for instant persistence
+const SYNC_KEYS = {
+  NOTES: 'obsidian_pwa_notes_sync',
+  PENDING_WRITES: 'obsidian_pwa_pending_writes',
+}
+
+// Helper: Synchronously save notes to localStorage (instant, survives browser close)
+function syncSaveNotes(notes: Note[]): void {
+  try {
+    localStorage.setItem(SYNC_KEYS.NOTES, JSON.stringify(notes))
+  } catch (error) {
+    // localStorage might be full or disabled, log but don't throw
+    console.warn('Sync localStorage save failed:', error)
+  }
+}
+
+// Helper: Synchronously read notes from localStorage
+function syncGetNotes(): Note[] | null {
+  try {
+    const data = localStorage.getItem(SYNC_KEYS.NOTES)
+    if (data) {
+      return JSON.parse(data) as Note[]
+    }
+  } catch (error) {
+    console.warn('Sync localStorage read failed:', error)
+  }
+  return null
+}
+
+// Helper: Synchronously save a single note update (for instant persistence)
+function syncSaveNote(note: Note): void {
+  try {
+    const notes = syncGetNotes() || []
+    const index = notes.findIndex((n) => n.id === note.id)
+    
+    if (index >= 0) {
+      notes[index] = note
+    } else {
+      notes.push(note)
+    }
+    
+    syncSaveNotes(notes)
+  } catch (error) {
+    console.warn('Sync localStorage note save failed:', error)
+  }
+}
+
+// Helper: Synchronously delete a note from localStorage
+function syncDeleteNote(noteId: string): void {
+  try {
+    const notes = syncGetNotes() || []
+    const filtered = notes.filter((n) => n.id !== noteId)
+    syncSaveNotes(filtered)
+  } catch (error) {
+    console.warn('Sync localStorage note delete failed:', error)
+  }
+}
+
 export class LocalStorage {
   // Notes operations
   static async getNotes(): Promise<Note[]> {
     try {
+      // First try to get from async IndexedDB (source of truth for large data)
       const notes = await localforage.getItem<Note[]>(STORES.NOTES)
-      return notes || []
+      
+      if (notes && notes.length > 0) {
+        // Sync to localStorage for instant access next time
+        syncSaveNotes(notes)
+        return notes
+      }
+      
+      // Fallback: check synchronous localStorage (may have more recent data)
+      const syncNotes = syncGetNotes()
+      if (syncNotes && syncNotes.length > 0) {
+        // Restore to IndexedDB in background
+        localforage.setItem(STORES.NOTES, syncNotes).catch(console.error)
+        return syncNotes
+      }
+      
+      return []
     } catch (error) {
       console.error('Error getting notes:', error)
-      return []
+      // Fallback to sync localStorage on error
+      return syncGetNotes() || []
     }
   }
 
@@ -41,32 +119,53 @@ export class LocalStorage {
     }
   }
 
+  // INSTANT SAVE: Synchronously saves to localStorage first, then async to IndexedDB
   static async saveNote(note: Note): Promise<void> {
+    const noteWithTimestamp = { ...note, updated_at: new Date().toISOString() }
+    
+    // STEP 1: SYNCHRONOUS - Save to localStorage IMMEDIATELY (survives browser close)
+    syncSaveNote(noteWithTimestamp)
+    
+    // STEP 2: ASYNC - Save to IndexedDB in background (handles large data better)
     try {
-      const notes = await this.getNotes()
+      const notes = await localforage.getItem<Note[]>(STORES.NOTES) || []
       const index = notes.findIndex((n) => n.id === note.id)
       
       if (index >= 0) {
-        notes[index] = { ...note, updated_at: new Date().toISOString() }
+        notes[index] = noteWithTimestamp
       } else {
-        notes.push(note)
+        notes.push(noteWithTimestamp)
       }
       
       await localforage.setItem(STORES.NOTES, notes)
     } catch (error) {
-      console.error('Error saving note:', error)
-      throw error
+      console.error('Error saving note to IndexedDB:', error)
+      // Don't throw - sync localStorage already has the data
     }
   }
 
+  // SYNCHRONOUS ONLY: For truly instant saves that MUST complete before any navigation
+  // This is a blocking call that writes to localStorage immediately
+  static saveNoteSync(note: Note): void {
+    const noteWithTimestamp = { ...note, updated_at: new Date().toISOString() }
+    syncSaveNote(noteWithTimestamp)
+    
+    // Also trigger async IndexedDB save in background (fire-and-forget)
+    this.saveNote(note).catch(console.error)
+  }
+
   static async deleteNote(id: string): Promise<void> {
+    // STEP 1: SYNCHRONOUS - Delete from localStorage IMMEDIATELY
+    syncDeleteNote(id)
+    
+    // STEP 2: ASYNC - Delete from IndexedDB
     try {
-      const notes = await this.getNotes()
+      const notes = await localforage.getItem<Note[]>(STORES.NOTES) || []
       const filtered = notes.filter((note) => note.id !== id)
       await localforage.setItem(STORES.NOTES, filtered)
     } catch (error) {
-      console.error('Error deleting note:', error)
-      throw error
+      console.error('Error deleting note from IndexedDB:', error)
+      // Don't throw - sync localStorage already updated
     }
   }
 

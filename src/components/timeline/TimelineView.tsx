@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import React, { useMemo, useState } from 'react'
 import { Note } from '@/types'
 import { format, isSameDay, parseISO } from 'date-fns'

@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 /**
  * Extension CodeMirror pour menu contextuel IA
  * Gère le clic droit sur texte sélectionné pour ouvrir le menu IA

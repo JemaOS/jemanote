@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocalNotes } from '@/hooks/useLocalNotes'
@@ -16,18 +19,24 @@ import TimelineView from '@/components/timeline/TimelineView'
 
 function App() {
   const { user, loading, signOut } = useAuth()
-  const { 
-    notes, 
-    syncing, 
-    syncEnabled, 
-    createNote, 
-    updateNote, 
-    deleteNote, 
+  const {
+    notes,
+    folders,
+    syncing,
+    syncEnabled,
+    createNote,
+    updateNote,
+    deleteNote,
     restoreNote,
     permanentlyDeleteNote,
+    deleteFolder,
+    restoreFolder,
+    permanentlyDeleteFolder,
+    reloadFolders,
     trashNotes,
-    enableSync, 
-    disableSync 
+    trashFolders,
+    enableSync,
+    disableSync
   } = useLocalNotes(user?.id)
   const [currentView, setCurrentView] = useState<ViewMode>('workspace')
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
@@ -37,6 +46,7 @@ function App() {
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const [hasUserToggledSidebar, setHasUserToggledSidebar] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Auto-enable sync when user logs in
   React.useEffect(() => {
@@ -136,12 +146,15 @@ function App() {
         )
       case 'search':
         return (
-          <SearchView 
-            userId={user?.id} 
+          <SearchView
+            userId={user?.id}
             notes={notes}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
             onSelectNote={(noteId) => {
               setActiveNoteId(noteId)
               setCurrentView('workspace')
+              setSearchQuery('')
             }}
           />
         )
@@ -199,6 +212,8 @@ function App() {
         rightSidebarOpen={rightSidebarOpen}
         user={user}
         onShowAuth={() => setShowAuthModal(true)}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
       />
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -223,12 +238,18 @@ function App() {
                 if (isMobile) setLeftSidebarOpen(false)
               }}
               notes={notes}
+              folders={folders}
               trashNotes={trashNotes}
+              trashFolders={trashFolders}
               createNote={createNote}
               updateNote={updateNote}
               deleteNote={deleteNote}
               restoreNote={restoreNote}
               permanentlyDeleteNote={permanentlyDeleteNote}
+              deleteFolder={deleteFolder}
+              restoreFolder={restoreFolder}
+              permanentlyDeleteFolder={permanentlyDeleteFolder}
+              reloadFolders={reloadFolders}
             />
           </div>
         )}

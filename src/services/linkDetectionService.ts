@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 /**
  * Service de détection de liens intelligents entre notes
  * Utilise l'analyse de mots-clés et l'IA Mistral pour suggérer des connexions pertinentes

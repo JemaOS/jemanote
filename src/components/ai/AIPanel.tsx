@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 /**
  * Panel IA centralisé - Sidebar dédiée avec toutes les fonctionnalités IA
  * Inclut: Résumés, Tags, Brainstorming, Synthèse multi-notes

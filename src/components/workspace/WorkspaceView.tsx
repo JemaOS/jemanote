@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Note, Attachment } from '@/types'
 import { LocalStorage } from '@/lib/localStorage'
@@ -6,7 +9,7 @@ import MarkdownPreview from '@/components/editor/MarkdownPreview'
 import VoiceRecorder from '@/components/editor/VoiceRecorder'
 import AISummaryModal from '@/components/ai/AISummaryModal'
 import AIPanel from '@/components/ai/AIPanel'
-import { Eye, Edit3, Columns2, Check, Clock, AlertCircle, Sparkles, Lightbulb, X, Bot, Mic } from 'lucide-react'
+import { Eye, Edit3, Columns2, Sparkles, Lightbulb, X, Bot, Mic } from 'lucide-react'
 
 interface WorkspaceViewProps {
   userId?: string | null
@@ -14,7 +17,7 @@ interface WorkspaceViewProps {
   onNoteChange: (noteId: string | null) => void
   rightSidebarOpen: boolean
   notes: Note[]
-  updateNote: (noteId: string, updates: Partial<Note>) => Promise<any>
+  updateNote: (noteId: string, updates: Partial<Note>) => { data: Note | null; error: Error | null }
   createNote?: (title: string, content: string, folderId?: string) => Promise<Note | null>
 }
 
@@ -40,9 +43,7 @@ export default function WorkspaceView({
   const [showAIPanel, setShowAIPanel] = useState(false)
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false)
   
-  // Refs pour les debounce timers
-  const contentTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const titleTimerRef = useRef<NodeJS.Timeout | null>(null)
+  // Refs pour le tracking des valeurs sauvegardées et timers
   const lastSavedContent = useRef('')
   const lastSavedTitle = useRef('')
   const autoSuggestTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -75,59 +76,44 @@ export default function WorkspaceView({
     }
   }, [activeNote])
 
-  // Fonction de sauvegarde avec gestion d'erreur
-  const saveNote = useCallback(async (updates: Partial<Note>) => {
+  // Fonction de sauvegarde INSTANTANÉE - pas d'async, pas d'attente
+  const saveNote = useCallback((updates: Partial<Note>) => {
     if (!activeNoteId) return
 
-    try {
-      setSaveStatus('saving')
-      const result = await updateNote(activeNoteId, updates)
-      
-      if (result.error) {
-        console.error('Erreur de sauvegarde:', result.error)
-        setSaveStatus('error')
-        setTimeout(() => setSaveStatus('unsaved'), 2000)
-      } else {
-        // Mise à jour des dernières valeurs sauvegardées
-        if (updates.content !== undefined) {
-          lastSavedContent.current = updates.content
-        }
-        if (updates.title !== undefined) {
-          lastSavedTitle.current = updates.title
-        }
-        setSaveStatus('saved')
-      }
-    } catch (error) {
-      console.error('Erreur de sauvegarde:', error)
+    // updateNote() met à jour l'état React de façon SYNCHRONE
+    // La persistance localStorage se fait en arrière-plan (fire-and-forget)
+    const result = updateNote(activeNoteId, updates)
+    
+    if (result.error) {
+      console.error('Erreur de sauvegarde:', result.error)
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('unsaved'), 2000)
+    } else {
+      // Mise à jour des dernières valeurs sauvegardées
+      if (updates.content !== undefined) {
+        lastSavedContent.current = updates.content
+      }
+      if (updates.title !== undefined) {
+        lastSavedTitle.current = updates.title
+      }
+      // Status "saved" immédiatement car l'état React est déjà mis à jour
+      setSaveStatus('saved')
     }
   }, [activeNoteId, updateNote])
 
-  // Gestion du changement de contenu avec debounce
+  // Gestion du changement de contenu - INSTANT pour synchronisation canvas
   const handleContentChange = (newContent: string) => {
     setContent(newContent)
     
     if (!activeNoteId) return
 
-    // Marquer comme non sauvegardé si différent de la dernière sauvegarde
+    // Sauvegarder IMMÉDIATEMENT pour synchronisation instantanée avec le canvas
+    // updateNote() met à jour l'état React de façon synchrone, puis persiste en async
     if (newContent !== lastSavedContent.current) {
-      setSaveStatus('unsaved')
+      saveNote({ content: newContent })
     }
 
-    // Annuler le timer précédent
-    if (contentTimerRef.current) {
-      clearTimeout(contentTimerRef.current)
-    }
-
-    // Créer un nouveau timer pour l'auto-save (1 seconde pour réactivité)
-    contentTimerRef.current = setTimeout(() => {
-      if (newContent !== lastSavedContent.current) {
-        saveNote({ content: newContent })
-      }
-    }, 1000)
-
-    // Auto-suggestion pour les notes >500 caractères
+    // Auto-suggestion pour les notes >500 caractères (avec debounce)
     if (autoSuggestTimerRef.current) {
       clearTimeout(autoSuggestTimerRef.current)
     }
@@ -142,29 +128,17 @@ export default function WorkspaceView({
     }, 2000)
   }
 
-  // Gestion du changement de titre avec debounce
+  // Gestion du changement de titre - INSTANT pour synchronisation canvas
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value
     setTitle(newTitle)
     
     if (!activeNoteId) return
 
-    // Marquer comme non sauvegardé si différent de la dernière sauvegarde
+    // Sauvegarder IMMÉDIATEMENT pour synchronisation instantanée avec le canvas
     if (newTitle !== lastSavedTitle.current) {
-      setSaveStatus('unsaved')
+      saveNote({ title: newTitle })
     }
-
-    // Annuler le timer précédent
-    if (titleTimerRef.current) {
-      clearTimeout(titleTimerRef.current)
-    }
-
-    // Créer un nouveau timer pour l'auto-save (800ms pour réactivité)
-    titleTimerRef.current = setTimeout(() => {
-      if (newTitle !== lastSavedTitle.current) {
-        saveNote({ title: newTitle })
-      }
-    }, 800)
   }
 
   // Sauvegarde manuelle forcée
@@ -187,16 +161,9 @@ export default function WorkspaceView({
     }
   }
 
-  // Sauvegarde avant navigation
+  // Cleanup des timers avant navigation
   useEffect(() => {
     return () => {
-      // Cleanup: annuler les timers
-      if (contentTimerRef.current) {
-        clearTimeout(contentTimerRef.current)
-      }
-      if (titleTimerRef.current) {
-        clearTimeout(titleTimerRef.current)
-      }
       if (autoSuggestTimerRef.current) {
         clearTimeout(autoSuggestTimerRef.current)
       }
@@ -294,40 +261,6 @@ export default function WorkspaceView({
     setShowAISummary(true)
   }
 
-  // Indicateur de status
-  const SaveStatusIndicator = () => {
-    switch (saveStatus) {
-      case 'saved':
-        return (
-          <div className="flex items-center gap-1 sm:gap-1.5 text-green-600 dark:text-green-400 text-xs sm:text-sm">
-            <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Sauvegardé</span>
-          </div>
-        )
-      case 'saving':
-        return (
-          <div className="flex items-center gap-1 sm:gap-1.5 text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
-            <Clock className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-            <span className="hidden sm:inline">Sauvegarde...</span>
-          </div>
-        )
-      case 'unsaved':
-        return (
-          <div className="flex items-center gap-1 sm:gap-1.5 text-orange-600 dark:text-orange-400 text-xs sm:text-sm">
-            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Non sauvegardé</span>
-          </div>
-        )
-      case 'error':
-        return (
-          <div className="flex items-center gap-1 sm:gap-1.5 text-red-600 dark:text-red-400 text-xs sm:text-sm">
-            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Erreur</span>
-          </div>
-        )
-    }
-  }
-
   if (!activeNote) {
     return (
       <div className="flex h-full items-center justify-center bg-white dark:bg-neutral-900">
@@ -385,9 +318,6 @@ export default function WorkspaceView({
           
           {/* Groupe de droite avec tous les contrôles */}
           <div className="flex items-center gap-1 laptop:gap-1.5 laptop-lg:gap-2 order-3 laptop:order-2 flex-shrink-0">
-            {/* Indicateur de sauvegarde */}
-            <SaveStatusIndicator />
-            
             {/* Bouton Note Vocale */}
             <button
               onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}

@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Mail, Lock, User } from 'lucide-react'

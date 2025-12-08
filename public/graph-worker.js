@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 /**
  * Web Worker pour calculs de physique du graphe
  * Algorithme Force-Directed (Fruchterman-Reingold adapté)

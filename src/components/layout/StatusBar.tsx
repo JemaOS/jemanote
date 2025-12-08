@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import { CheckCircle, AlertCircle, Clock, Cloud, HardDrive, RefreshCw } from 'lucide-react'
 
 interface StatusBarProps {
@@ -74,6 +77,29 @@ export default function StatusBar({
       </div>
 
       <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
+        <span className="hidden lg:inline text-[10px] xs:text-xs text-neutral-500 dark:text-neutral-400">
+          Développé par{' '}
+          <a
+            href="https://www.jematechnology.fr/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 hover:underline"
+          >
+            Jema Technology
+          </a>
+          {' '}© 2025 • Open Source & sous licence AGPL
+        </span>
+        <span className="hidden sm:inline lg:hidden text-[10px] xs:text-xs text-neutral-500 dark:text-neutral-400">
+          <a
+            href="https://www.jematechnology.fr/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 hover:underline"
+          >
+            Jema Technology
+          </a>
+          {' '}© 2025
+        </span>
         <span className="hidden sm:inline">Mode: Édition</span>
         <span className="sm:hidden text-[10px] xs:text-xs text-neutral-500">Édit</span>
       </div>

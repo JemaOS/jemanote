@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 export interface Note {
   id: string
   user_id: string
@@ -19,6 +22,7 @@ export interface Folder {
   path: string
   icon?: string
   color?: string
+  deleted_at?: string | null
   created_at: string
   updated_at: string
 }

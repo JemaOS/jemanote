@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 /**
  * Service d'indexation du graphe - Style Obsidian
  * Extraction rapide de wikilinks [[note]] et liens markdown [text](note)

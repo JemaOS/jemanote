@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 /**
  * Menu contextuel IA pour l'éditeur CodeMirror
  * Fonctions: Continuer, Améliorer, Changer ton, Traduire

@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import { useState, useEffect } from 'react'
 import { aiService } from '@/services/ai/mistralService'
 import { Sparkles, Check, Server, Loader2, AlertTriangle } from 'lucide-react'

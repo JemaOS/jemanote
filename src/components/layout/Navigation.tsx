@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import { useState } from 'react'
 import { ViewMode } from '@/types'
 import { User } from '@supabase/supabase-js'
@@ -28,6 +31,8 @@ interface NavigationProps {
   rightSidebarOpen: boolean
   user: User | null
   onShowAuth: () => void
+  searchQuery?: string
+  onSearchQueryChange?: (query: string) => void
 }
 
 export default function Navigation({
@@ -39,6 +44,8 @@ export default function Navigation({
   rightSidebarOpen,
   user,
   onShowAuth,
+  searchQuery = '',
+  onSearchQueryChange,
 }: NavigationProps) {
   const { signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -119,8 +126,19 @@ export default function Navigation({
             <input
               type="text"
               placeholder="Rechercher des notes..."
+              value={searchQuery}
+              onChange={(e) => {
+                onSearchQueryChange?.(e.target.value)
+                if (currentView !== 'search') {
+                  onViewChange('search')
+                }
+              }}
               className="w-full h-10 laptop:h-11 laptop-lg:h-12 pl-9 laptop:pl-11 pr-4 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm laptop:text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              onFocus={() => onViewChange('search')}
+              onFocus={() => {
+                if (currentView !== 'search') {
+                  onViewChange('search')
+                }
+              }}
             />
           </div>
         </div>

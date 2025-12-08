@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 /**
  * Service client pour l'API Mistral AI
  * Gestion des appels API, cache IndexedDB, et gestion d'erreurs

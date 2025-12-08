@@ -1,0 +1,100 @@
+**
+
+```markdown
+---
+**GNU AFFERO GENERAL PUBLIC LICENSE**
+Version 3, 19 November 2007
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+
+**Customized for Jema Technology**
+---
+
+## Preamble
+
+The **GNU Affero General Public License (AGPL)** is a free, copyleft license for software and other kinds of works. It is specifically designed to ensure cooperation with the community in the case of network server software.
+
+Most software licenses are designed to take away your freedom to share and change the software. By contrast, the GNU General Public Licenses are intended to guarantee your freedom to share and change all versions of a program—to ensure the software remains free for all its users.
+
+When we speak of free software, we refer to **freedom, not price**. The GNU General Public Licenses ensure that you have the freedom to:
+- Distribute copies of free software (and charge for them if you wish),
+- Access the source code or obtain it if you want,
+- Modify the software or use parts of it in new free programs,
+- Know that you can do these things.
+
+Developers using the GNU General Public Licenses protect your rights by:
+1. Asserting copyright on the software, and
+2. Offering you this License, which gives you legal permission to copy, distribute, and/or modify the software.
+
+A secondary benefit of defending all users' freedom is that improvements made in alternate versions of the program, if widely used, become available for other developers to incorporate. However, in the case of software used on network servers, this may not happen. The **GNU Affero General Public License** addresses this by requiring that the modified source code becomes available to the community when the software is used on a network server.
+
+---
+
+## 1. Definitions
+
+- **"Work"**: Any copyrightable work, including software.
+- **"Source Code"**: The preferred form of the work for making modifications.
+- **"Object Code"**: Any non-source form of the work.
+- **"Modified Version"**: A work based on the original or part of it, either by modifying, translating, or improving it.
+
+---
+
+## 2. Distribution Terms
+
+You may copy and distribute verbatim copies of the source code as you receive it, provided that you:
+- Retain all copyright notices,
+- Include a copy of this License,
+- Do not add further restrictions.
+
+You may also distribute modified versions, provided that you:
+- Release the modified source code under the same terms as this License,
+- Clearly document the changes made,
+- Retain all copyright and license notices.
+
+---
+
+## 3. Network Server Use
+
+If you modify a work covered by this License and run it on a network server accessible to the public, you must:
+- Make the complete source code of the modified work available, including all modifications, under the terms of this License,
+- Provide a way for users to download the source code.
+
+---
+
+## 4. Additional Terms
+
+- **No Warranty**: The work is provided "as is," without any kind of warranty.
+- **Limitation of Liability**: In no event shall the authors or copyright holders be liable for any damages arising from the use of the work.
+
+---
+
+## 5. Acceptance of the License
+
+By copying, distributing, or modifying the work, you accept the terms of this License.
+
+---
+
+## 6. How to Apply This License to Your Works
+
+To apply this License to your work, include the following notices in the source code:
+
+```plaintext
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+```
+
+---
+
+**End of Document**
+```
+
+**

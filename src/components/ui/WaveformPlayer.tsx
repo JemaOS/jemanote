@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import { useState, useEffect, useRef } from 'react'
 import { Play, Pause } from 'lucide-react'
 

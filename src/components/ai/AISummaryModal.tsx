@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
 import React, { useState, useEffect } from 'react'
 import { aiService, type SummaryHistoryEntry } from '@/services/ai/mistralService'
 import { X, Loader2, Sparkles, FileText, List, AlignLeft, Copy, CheckCircle2, FilePlus, History, XCircle } from 'lucide-react'

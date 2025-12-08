@@ -1,6 +1,9 @@
-import { useRef, useEffect, useState } from 'react'
+// Copyright (c) 2025 Jema Technology.
+// Distributed under the license specified in the root directory of this project.
+
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { Note } from '@/types'
-import { ZoomIn, ZoomOut, Maximize2, Plus, Trash2 } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize2, Plus, Trash2, CheckSquare, Square, X } from 'lucide-react'
 import { LocalStorage } from '@/lib/localStorage'
 
 interface CanvasViewProps {
@@ -39,12 +42,13 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
   const [canvasNodes, setCanvasNodes] = useState<CanvasNode[]>([])
   const [connections, setConnections] = useState<CanvasConnection[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set()) // Multi-selection
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false) // Multi-select mode toggle
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
   const lastTouchDistance = useRef<number | null>(null)
   const lastTap = useRef<number>(0)
   const justCreatedIds = useRef<Set<string>>(new Set()) // Track locally created notes to prevent sync race conditions
-  const prevNotesRef = useRef<Note[]>(notes)
 
   // Helper for pinch zoom distance
   const getDistance = (touch1: React.Touch, touch2: React.Touch) => {
@@ -76,7 +80,7 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
             y: 100 + Math.floor(index / 3) * 250,
             width: 250,
             height: 200,
-            content: note.content.slice(0, 150) + '...',
+            content: note.content,
             title: note.title,
             color: '#5a63e9',
           }))
@@ -90,16 +94,17 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
     loadCanvasData()
   }, []) // Run only on mount
 
-  // Sync canvas nodes with active notes (handle additions and deletions)
+  // Sync canvas nodes with active notes (handle additions, deletions, AND content updates)
   useEffect(() => {
-    const prevNotes = prevNotesRef.current
     const currentNoteIds = new Set(notes.map(n => n.id))
     
     setCanvasNodes((prev) => {
       const nextNodes = [...prev]
+      const existingNodeIds = new Set(prev.map(n => n.id))
       let hasChanges = false
       
       // 1. Remove nodes that are no longer in notes (and not just created)
+      // AND update content/title for existing notes
       for (let i = nextNodes.length - 1; i >= 0; i--) {
         const node = nextNodes[i]
         if (node.type === 'note') {
@@ -111,6 +116,17 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
             if (isJustCreated) {
               justCreatedIds.current.delete(node.id)
             }
+            
+            // Update content and title if they have changed
+            const sourceNote = notes.find(n => n.id === node.id)
+            if (sourceNote && (node.content !== sourceNote.content || node.title !== sourceNote.title)) {
+              nextNodes[i] = {
+                ...node,
+                content: sourceNote.content,
+                title: sourceNote.title,
+              }
+              hasChanges = true
+            }
           } else if (!isJustCreated) {
             // Not in notes and not just created -> delete it
             nextNodes.splice(i, 1)
@@ -119,19 +135,30 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
         }
       }
       
-      // 2. Add new notes from props
-      const newNotes = notes.filter(n => !prevNotes.some(pn => pn.id === n.id))
+      // 2. Add notes that exist in props but not in canvas nodes
+      // This is the key fix: we check against existing canvas nodes, not previous notes
+      // Calculate position based on existing nodes for grid-like arrangement
+      const NODE_WIDTH = 250
+      const NODE_HEIGHT = 200
+      const GAP_X = 50
+      const GAP_Y = 50
+      const COLS = 3
       
-      newNotes.forEach(note => {
-        // Check if already exists
-        if (!nextNodes.some(n => n.id === note.id)) {
-           nextNodes.push({
+      notes.forEach(note => {
+        if (!existingNodeIds.has(note.id)) {
+          // Find the next available position in a grid layout
+          const existingNoteNodes = nextNodes.filter(n => n.type === 'note')
+          const nodeIndex = existingNoteNodes.length
+          const col = nodeIndex % COLS
+          const row = Math.floor(nodeIndex / COLS)
+          
+          nextNodes.push({
             id: note.id,
             type: 'note',
-            x: (-pan.x + window.innerWidth / 2) / zoom + (Math.random() * 40 - 20),
-            y: (-pan.y + window.innerHeight / 2) / zoom + (Math.random() * 40 - 20),
-            width: 250,
-            height: 200,
+            x: 100 + col * (NODE_WIDTH + GAP_X),
+            y: 100 + row * (NODE_HEIGHT + GAP_Y),
+            width: NODE_WIDTH,
+            height: NODE_HEIGHT,
             content: note.content,
             title: note.title,
             color: '#5a63e9',
@@ -142,8 +169,6 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
       
       return hasChanges ? nextNodes : prev
     })
-
-    prevNotesRef.current = notes
   }, [notes, pan.x, pan.y, zoom])
 
   // Save canvas nodes whenever they change
@@ -256,9 +281,73 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
     setPan({ x: 0, y: 0 })
   }
 
+  // Toggle node selection for multi-select
+  const toggleNodeSelection = useCallback((nodeId: string, addToSelection: boolean) => {
+    if (isMultiSelectMode || addToSelection) {
+      setSelectedNodes(prev => {
+        const newSet = new Set(prev)
+        if (newSet.has(nodeId)) {
+          newSet.delete(nodeId)
+        } else {
+          newSet.add(nodeId)
+        }
+        return newSet
+      })
+    } else {
+      // Single selection mode
+      setSelectedNodes(new Set([nodeId]))
+    }
+  }, [isMultiSelectMode])
+
+  // Select all nodes
+  const selectAllNodes = useCallback(() => {
+    setSelectedNodes(new Set(canvasNodes.map(n => n.id)))
+    setIsMultiSelectMode(true)
+  }, [canvasNodes])
+
+  // Clear selection
+  const clearSelection = useCallback(() => {
+    setSelectedNodes(new Set())
+    setSelectedNode(null)
+  }, [])
+
+  // Delete selected nodes
+  const deleteSelectedNodes = useCallback(async () => {
+    if (selectedNodes.size === 0) return
+
+    const noteNodes = canvasNodes.filter(n => selectedNodes.has(n.id) && n.type === 'note')
+    
+    if (noteNodes.length > 0 && deleteNote) {
+      const confirmed = window.confirm(
+        `Voulez-vous supprimer ${selectedNodes.size} élément(s) du canvas et mettre les ${noteNodes.length} note(s) à la corbeille ?`
+      )
+      if (confirmed) {
+        // Delete all note nodes from the database
+        for (const node of noteNodes) {
+          await deleteNote(node.id)
+        }
+      } else {
+        return // User cancelled
+      }
+    }
+
+    // Remove all selected nodes from canvas
+    setCanvasNodes(prev => prev.filter(n => !selectedNodes.has(n.id)))
+    setSelectedNodes(new Set())
+    setSelectedNode(null)
+    setIsMultiSelectMode(false)
+  }, [selectedNodes, canvasNodes, deleteNote])
+
   // Handle node dragging
   const handleNodeMouseDown = (e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation()
+    
+    // Check for Ctrl/Cmd key for multi-select
+    if (e.ctrlKey || e.metaKey || isMultiSelectMode) {
+      toggleNodeSelection(nodeId, true)
+      return
+    }
+    
     const node = canvasNodes.find((n) => n.id === nodeId)
     if (node) {
       // Calculate offset from node top-left to mouse position
@@ -271,6 +360,10 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
     }
     setDraggedNode(nodeId)
     setSelectedNode(nodeId)
+    // Clear multi-selection when single-clicking without modifier
+    if (!isMultiSelectMode) {
+      setSelectedNodes(new Set([nodeId]))
+    }
   }
 
   const handleNodeTouchStart = (e: React.TouchEvent, nodeId: string) => {
@@ -292,6 +385,13 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
         }
       }
     } else {
+      // In multi-select mode, toggle selection on tap
+      if (isMultiSelectMode) {
+        toggleNodeSelection(nodeId, true)
+        lastTap.current = now
+        return
+      }
+      
       const node = canvasNodes.find((n) => n.id === nodeId)
       if (node) {
         const touch = e.touches[0]
@@ -304,6 +404,7 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
       }
       setDraggedNode(nodeId)
       setSelectedNode(nodeId)
+      setSelectedNodes(new Set([nodeId]))
     }
     lastTap.current = now
   }
@@ -322,13 +423,25 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
         // Check if already exists (race condition protection)
         if (prev.some(n => n.id === newNote.id)) return prev
         
+        // Calculate position based on existing nodes for grid-like arrangement
+        const NODE_WIDTH = 250
+        const NODE_HEIGHT = 200
+        const GAP_X = 50
+        const GAP_Y = 50
+        const COLS = 3
+        
+        const existingNoteNodes = prev.filter(n => n.type === 'note')
+        const nodeIndex = existingNoteNodes.length
+        const col = nodeIndex % COLS
+        const row = Math.floor(nodeIndex / COLS)
+        
         const newNode: CanvasNode = {
           id: newNote.id,
           type: 'note',
-          x: (-pan.x + window.innerWidth / 2) / zoom - 125,
-          y: (-pan.y + window.innerHeight / 2) / zoom - 100,
-          width: 250,
-          height: 200,
+          x: 100 + col * (NODE_WIDTH + GAP_X),
+          y: 100 + row * (NODE_HEIGHT + GAP_Y),
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
           content: newNote.content,
           title: newNote.title,
           color: '#5a63e9',
@@ -357,6 +470,38 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-neutral-50 dark:bg-neutral-900">
+      {/* Multi-select toolbar - appears when in multi-select mode or has selection */}
+      {(isMultiSelectMode || selectedNodes.size > 1) && (
+        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2">
+          <span className="text-sm text-neutral-700 dark:text-neutral-300 px-2">
+            {selectedNodes.size} sélectionné(s)
+          </span>
+          <button
+            onClick={selectAllNodes}
+            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors"
+            title="Tout sélectionner"
+          >
+            <CheckSquare className="h-4 w-4 text-neutral-700 dark:text-neutral-300" />
+          </button>
+          <button
+            onClick={clearSelection}
+            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors"
+            title="Annuler la sélection"
+          >
+            <X className="h-4 w-4 text-neutral-700 dark:text-neutral-300" />
+          </button>
+          {selectedNodes.size > 0 && (
+            <button
+              onClick={deleteSelectedNodes}
+              className="p-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors"
+              title="Supprimer la sélection"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Canvas Controls - Responsive positioning */}
       <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex flex-col gap-2">
         <button
@@ -379,6 +524,31 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
           title="Réinitialiser la vue"
         >
           <Maximize2 className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
+        </button>
+        {/* Multi-select mode toggle */}
+        <button
+          onClick={() => {
+            setIsMultiSelectMode(!isMultiSelectMode)
+            if (!isMultiSelectMode) {
+              // Entering multi-select mode
+              setSelectedNodes(new Set())
+            } else {
+              // Exiting multi-select mode
+              clearSelection()
+            }
+          }}
+          className={`p-2.5 sm:p-3 border rounded-lg transition-colors shadow-lg min-w-touch min-h-touch flex items-center justify-center ${
+            isMultiSelectMode
+              ? 'bg-primary-500 text-white border-primary-500 hover:bg-primary-600'
+              : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+          }`}
+          title={isMultiSelectMode ? "Quitter le mode sélection" : "Mode sélection multiple"}
+        >
+          {isMultiSelectMode ? (
+            <CheckSquare className="h-5 w-5" />
+          ) : (
+            <Square className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
+          )}
         </button>
         <button
           onClick={addNoteNode}
@@ -446,12 +616,20 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
           </svg>
 
           {/* Render nodes */}
-          {canvasNodes.map((node) => (
+          {canvasNodes.map((node) => {
+            const isSelected = selectedNodes.has(node.id) || selectedNode === node.id
+            const isInMultiSelection = selectedNodes.has(node.id) && selectedNodes.size > 1
+            
+            return (
             <div
               key={node.id}
               className={`absolute bg-white dark:bg-neutral-800 border-2 rounded-lg shadow-lg overflow-hidden transition-shadow touch-none select-none ${
-                selectedNode === node.id ? 'border-primary-500 shadow-xl' : 'border-neutral-200 dark:border-neutral-700'
-              } ${draggedNode === node.id ? 'cursor-grabbing' : 'cursor-grab'}`}
+                isSelected
+                  ? isInMultiSelection
+                    ? 'border-primary-400 shadow-xl ring-2 ring-primary-300 ring-opacity-50'
+                    : 'border-primary-500 shadow-xl'
+                  : 'border-neutral-200 dark:border-neutral-700'
+              } ${draggedNode === node.id ? 'cursor-grabbing' : isMultiSelectMode ? 'cursor-pointer' : 'cursor-grab'}`}
               style={{
                 left: node.x,
                 top: node.y,
@@ -462,6 +640,7 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
               onTouchStart={(e) => handleNodeTouchStart(e, node.id)}
               onDoubleClick={(e) => {
                 e.stopPropagation()
+                if (isMultiSelectMode) return // Disable double-click in multi-select mode
                 if (node.type === 'text') {
                   setEditingNodeId(node.id)
                 } else if (node.type === 'note' && onOpenNote) {
@@ -469,7 +648,23 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
                 }
               }}
             >
-              {selectedNode === node.id && (
+              {/* Selection checkbox in multi-select mode - positioned at bottom left */}
+              {isMultiSelectMode && (
+                <div className="absolute bottom-2 left-2 z-50">
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    isSelected
+                      ? 'bg-primary-500 border-primary-500'
+                      : 'bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600'
+                  }`}>
+                    {isSelected && (
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              )}
+              {isSelected && !isMultiSelectMode && (
                 <button
                   onMouseDown={(e) => {
                     e.stopPropagation()
@@ -488,16 +683,19 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
               {node.type === 'note' && (
                 <div className="p-3 sm:p-4 h-full flex flex-col pointer-events-none">
                   <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: node.color }}
-                    />
+                    {/* Hide colored dot/badge when in multi-select mode */}
+                    {!isMultiSelectMode && (
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: node.color }}
+                      />
+                    )}
                     <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate flex-1">
                       {node.title}
                     </h3>
                   </div>
-                  <div className="text-xs text-neutral-600 dark:text-neutral-400 overflow-hidden">
-                    {node.content}
+                  <div className="text-xs text-neutral-600 dark:text-neutral-400 overflow-hidden line-clamp-6">
+                    {node.content.length > 200 ? node.content.slice(0, 200) + '...' : node.content}
                   </div>
                 </div>
               )}
@@ -526,7 +724,7 @@ export default function CanvasView({ userId, notes = [], onOpenNote, deleteNote,
                 </div>
               )}
             </div>
-          ))}
+          )})}
         </div>
       </div>
 
