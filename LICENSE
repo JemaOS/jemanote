@@ -1,4 +1,6 @@
 **
+
+```markdown
 ---
 **GNU AFFERO GENERAL PUBLIC LICENSE**
 Version 3, 19 November 2007
@@ -6,6 +8,7 @@ Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
 
 **Customized for Jema Technology**
 ---
+
 ## Preamble
 
 The **GNU Affero General Public License (AGPL)** is a free, copyleft license for software and other kinds of works. It is specifically designed to ensure cooperation with the community in the case of network server software.
@@ -25,6 +28,7 @@ Developers using the GNU General Public Licenses protect your rights by:
 A secondary benefit of defending all users' freedom is that improvements made in alternate versions of the program, if widely used, become available for other developers to incorporate. However, in the case of software used on network servers, this may not happen. The **GNU Affero General Public License** addresses this by requiring that the modified source code becomes available to the community when the software is used on a network server.
 
 ---
+
 ## 1. Definitions
 
 - **"Work"**: Any copyrightable work, including software.
@@ -33,6 +37,7 @@ A secondary benefit of defending all users' freedom is that improvements made in
 - **"Modified Version"**: A work based on the original or part of it, either by modifying, translating, or improving it.
 
 ---
+
 ## 2. Distribution Terms
 
 You may copy and distribute verbatim copies of the source code as you receive it, provided that you:
@@ -46,6 +51,7 @@ You may also distribute modified versions, provided that you:
 - Retain all copyright and license notices.
 
 ---
+
 ## 3. Network Server Use
 
 If you modify a work covered by this License and run it on a network server accessible to the public, you must:
@@ -53,17 +59,20 @@ If you modify a work covered by this License and run it on a network server acce
 - Provide a way for users to download the source code.
 
 ---
+
 ## 4. Additional Terms
 
 - **No Warranty**: The work is provided "as is," without any kind of warranty.
 - **Limitation of Liability**: In no event shall the authors or copyright holders be liable for any damages arising from the use of the work.
 
 ---
+
 ## 5. Acceptance of the License
 
 By copying, distributing, or modifying the work, you accept the terms of this License.
 
 ---
+
 ## 6. How to Apply This License to Your Works
 
 To apply this License to your work, include the following notices in the source code:
@@ -81,6 +90,11 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-End of Document
+```
+
+---
+
+**End of Document**
+```
 
 **
