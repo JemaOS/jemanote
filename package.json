@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "rm -f tsconfig.tsbuildinfo tsconfig.app.tsbuildinfo tsconfig.node.tsbuildinfo && tsc -b && vite build",
     "build:prod": "tsc -b && BUILD_MODE=prod vite build",
     "preview": "vite preview",
     "install-deps": "npm install",
