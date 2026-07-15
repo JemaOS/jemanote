@@ -13,6 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocalNotes } from '@/hooks/useLocalNotes';
 import { ViewMode } from '@/types';
+import { SubscriptionGuard } from './SubscriptionGuard';
 
 // Lazy load heavy view components for better code splitting
 // WorkspaceView is the default view - imported directly to avoid lazy-load delay
@@ -281,6 +282,7 @@ function App() {
   };
 
   return (
+    <SubscriptionGuard appName="JemaNote">
     <div className="flex h-screen flex-col bg-neutral-50 dark:bg-neutral-900 overflow-hidden">
       <Navigation
         currentView={currentView}
@@ -422,6 +424,7 @@ function App() {
 
       <InstallPrompt />
     </div>
+    </SubscriptionGuard>
   );
 }
 
