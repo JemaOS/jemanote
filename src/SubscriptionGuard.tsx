@@ -102,22 +102,25 @@ function getTokenFromCookie(): string | null {
 // rotationnaient en parallèle), ni récupérer les jetons du portail
 // jema-auth (autre session, dont la rotation tuerait aussi l'OS).
 function isOsManagedSession(): boolean {
-  return document.cookie.split(';').some((cookie) => {
+  return document.cookie.split(';').some(cookie => {
     const [name, value] = cookie.trim().split('=');
     return name === 'jemaos_managed' && value === '1';
   });
 }
 
+// Type guard : jeton présent ET non vide (strict-boolean-expressions).
+function isNonEmptyToken(value: string | null | undefined): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
 // Mode géré : attend qu'un NOUVEL access token apparaisse (posé par l'OS
 // après son refresh), quelques tentatives espacées. Renvoie null si rien
 // de neuf n'arrive.
-async function waitForManagedTokenRefresh(
-  staleToken: string
-): Promise<string | null> {
+async function waitForManagedTokenRefresh(staleToken: string): Promise<string | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 4000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
     const token = await getAccessToken(staleToken);
-    if (token && token !== staleToken) {
+    if (isNonEmptyToken(token) && token !== staleToken) {
       return token;
     }
   }
@@ -126,22 +129,30 @@ async function waitForManagedTokenRefresh(
 
 async function getAccessToken(exclude?: string): Promise<string | null> {
   const cookieToken = getTokenFromCookie();
-  if (cookieToken && cookieToken !== exclude) return cookieToken;
+  if (isNonEmptyToken(cookieToken) && cookieToken !== exclude) {
+    return cookieToken;
+  }
   if (window.getJemaOSToken) {
     try {
       const t = await window.getJemaOSToken();
-      if (t && t !== exclude) return t;
+      if (isNonEmptyToken(t) && t !== exclude) {
+        return t;
+      }
     } catch {
       // fall through
     }
   }
-  if (window.jemaosToken && window.jemaosToken !== exclude) {
+  if (isNonEmptyToken(window.jemaosToken) && window.jemaosToken !== exclude) {
     return window.jemaosToken;
   }
   try {
     const sessionToken = sessionStorage.getItem('jemaos_access_token');
-    if (sessionToken && sessionToken !== exclude) return sessionToken;
-  } catch {}
+    if (isNonEmptyToken(sessionToken) && sessionToken !== exclude) {
+      return sessionToken;
+    }
+  } catch {
+    /* storage indisponible */
+  }
   // Portail jema-auth (iframe + postMessage) : récupère les jetons de la
   // session OS (access + refresh) quand aucune autre source n'en a.
   // JAMAIS en mode géré : les jetons du portail appartiennent à la session
@@ -149,7 +160,7 @@ async function getAccessToken(exclude?: string): Promise<string | null> {
   // rotationner) tuerait l'une des deux sessions.
   if (!isOsManagedSession()) {
     const portal = await requestTokensFromPortal();
-    if (portal.accessToken && portal.accessToken !== exclude) {
+    if (isNonEmptyToken(portal.accessToken) && portal.accessToken !== exclude) {
       storePortalTokens(portal.accessToken, portal.refreshToken);
       return portal.accessToken;
     }
@@ -173,16 +184,18 @@ function clearStaleTokenCookie() {
     '.jematech.fr',
   ];
   for (const domain of domains) {
-    document.cookie =
-      'jemaos_access_token=; Max-Age=0; path=/' +
-      (domain ? `; domain=${domain}` : '');
+    document.cookie = `jemaos_access_token=; Max-Age=0; path=/${
+      domain !== undefined ? `; domain=${domain}` : ''
+    }`;
   }
 }
 
 function markSubscriptionOk() {
   try {
     localStorage.setItem(GRACE_KEY, String(Date.now() + GRACE_MS));
-  } catch {}
+  } catch {
+    /* storage indisponible */
+  }
   // Token frais obtenu : on réarme la reconnexion automatique.
   clearReauthAttempt();
 }
@@ -192,12 +205,14 @@ function markSubscriptionOk() {
 function clearSubscriptionGrace() {
   try {
     localStorage.removeItem(GRACE_KEY);
-  } catch {}
+  } catch {
+    /* storage indisponible */
+  }
 }
 
 function inGracePeriod(): boolean {
   try {
-    const until = Number(localStorage.getItem(GRACE_KEY) || 0);
+    const until = Number(localStorage.getItem(GRACE_KEY) ?? 0);
     return Date.now() < until;
   } catch {
     return false;
@@ -209,15 +224,27 @@ function inGracePeriod(): boolean {
 const REAUTH_FLAG = 'jemaos_reauth_attempted';
 
 function markReauthAttempted() {
-  try { sessionStorage.setItem(REAUTH_FLAG, '1'); } catch {}
+  try {
+    sessionStorage.setItem(REAUTH_FLAG, '1');
+  } catch {
+    /* ignore */
+  }
 }
 
 function reauthAlreadyAttempted(): boolean {
-  try { return sessionStorage.getItem(REAUTH_FLAG) === '1'; } catch { return false; }
+  try {
+    return sessionStorage.getItem(REAUTH_FLAG) === '1';
+  } catch {
+    return false;
+  }
 }
 
 function clearReauthAttempt() {
-  try { sessionStorage.removeItem(REAUTH_FLAG); } catch {}
+  try {
+    sessionStorage.removeItem(REAUTH_FLAG);
+  } catch {
+    /* ignore */
+  }
 }
 
 // return_to de la page /auth interne : même origine uniquement
@@ -226,7 +253,9 @@ function getSafeReturnTo(): string {
   const fallback = `${window.location.origin}/`;
   try {
     const raw = new URLSearchParams(window.location.search).get('return_to');
-    if (!raw) return fallback;
+    if (raw === null || raw === '') {
+      return fallback;
+    }
     const url = new URL(raw, window.location.origin);
     return url.origin === window.location.origin ? url.href : fallback;
   } catch {
@@ -239,15 +268,25 @@ function getSafeReturnTo(): string {
 let portalIframePromise: Promise<HTMLIFrameElement | null> | null = null;
 
 function loadPortalIframe(): Promise<HTMLIFrameElement | null> {
-  if (portalIframePromise) return portalIframePromise;
-  portalIframePromise = new Promise((resolve) => {
+  if (portalIframePromise) {
+    return portalIframePromise;
+  }
+  portalIframePromise = new Promise(resolve => {
     try {
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
       iframe.setAttribute('aria-hidden', 'true');
-      const timeout = setTimeout(() => resolve(null), 8000);
-      iframe.onload = () => { clearTimeout(timeout); resolve(iframe); };
-      iframe.onerror = () => { clearTimeout(timeout); resolve(null); };
+      const timeout = setTimeout(() => {
+        resolve(null);
+      }, 8000);
+      iframe.onload = () => {
+        clearTimeout(timeout);
+        resolve(iframe);
+      };
+      iframe.onerror = () => {
+        clearTimeout(timeout);
+        resolve(null);
+      };
       iframe.src = AUTH_PORTAL_URL;
       document.body.appendChild(iframe);
     } catch {
@@ -268,25 +307,37 @@ async function requestTokensFromPortal(): Promise<{
   const empty = { accessToken: null, refreshToken: null };
   try {
     const iframe = await loadPortalIframe();
-    if (!iframe || !iframe.contentWindow) return empty;
+    if (!iframe?.contentWindow) {
+      return empty;
+    }
     const frameWindow = iframe.contentWindow;
-    return await new Promise((resolve) => {
+    return await new Promise(resolve => {
       const cleanup = () => {
         clearTimeout(timeout);
         window.removeEventListener('message', onMessage);
       };
-      const timeout = setTimeout(() => { cleanup(); resolve(empty); }, 2500);
+      const timeout = setTimeout(() => {
+        cleanup();
+        resolve(empty);
+      }, 2500);
       const onMessage = (event: MessageEvent) => {
-        if (event.origin !== AUTH_PORTAL_URL) return;
-        const data = event.data;
-        if (data && data.type === 'jemaos_token_response') {
+        if (event.origin !== AUTH_PORTAL_URL) {
+          return;
+        }
+        const data: unknown = event.data;
+        if (
+          typeof data === 'object' &&
+          data !== null &&
+          (data as { type?: unknown }).type === 'jemaos_token_response'
+        ) {
+          const payload = data as { token?: unknown; refreshToken?: unknown };
           cleanup();
           resolve({
             accessToken:
-              typeof data.token === 'string' && data.token ? data.token : null,
+              typeof payload.token === 'string' && payload.token.length > 0 ? payload.token : null,
             refreshToken:
-              typeof data.refreshToken === 'string' && data.refreshToken
-                ? data.refreshToken
+              typeof payload.refreshToken === 'string' && payload.refreshToken.length > 0
+                ? payload.refreshToken
                 : null,
           });
         }
@@ -306,15 +357,21 @@ async function requestTokensFromPortal(): Promise<{
 // Stocke les jetons reçus du portail dans les stores du PWA (le cookie
 // partagé .jemaos.com permet aux autres PWA d'en profiter directement).
 function storePortalTokens(accessToken: string | null, refreshToken: string | null) {
-  if (accessToken) {
-    try { sessionStorage.setItem('jemaos_access_token', accessToken); } catch {}
+  if (isNonEmptyToken(accessToken)) {
+    try {
+      sessionStorage.setItem('jemaos_access_token', accessToken);
+    } catch {
+      /* ignore */
+    }
     document.cookie = `jemaos_access_token=${accessToken}; Domain=.jemaos.com; Path=/; Secure; SameSite=Lax; Max-Age=86400`;
   }
-  if (refreshToken) {
+  if (isNonEmptyToken(refreshToken)) {
     try {
       sessionStorage.setItem('jemaos_refresh_token', refreshToken);
       localStorage.setItem('jemaos_refresh_token', refreshToken);
-    } catch {}
+    } catch {
+      /* storage indisponible */
+    }
     document.cookie = `jemaos_refresh_token=${refreshToken}; Domain=.jemaos.com; Path=/; Secure; SameSite=Lax; Max-Age=604800`;
   }
 }
@@ -330,10 +387,15 @@ async function checkSubscription(token: string): Promise<CheckResult> {
       },
       body: JSON.stringify({}),
     });
-    if (res.status === 401 || res.status === 403) return 'unauthorized';
-    if (!res.ok) return 'error'; // 5xx : ne jamais murer sur une panne API
-    const data = await res.json();
-    return data.hasSubscription === true ? 'ok' : 'no-subscription';
+    if (res.status === 401 || res.status === 403) {
+      return 'unauthorized';
+    }
+    if (!res.ok) {
+      return 'error';
+    } // 5xx : ne jamais murer sur une panne API
+    const data: unknown = await res.json();
+    const payload = data as { hasSubscription?: unknown };
+    return payload.hasSubscription === true ? 'ok' : 'no-subscription';
   } catch {
     return 'error'; // offline/DNS/CORS : conserver l'état courant
   }
@@ -345,21 +407,29 @@ function getRefreshTokenFromStores(): string | null {
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split('=');
-    if (name === 'jemaos_refresh_token' && value) {
+    if (name === 'jemaos_refresh_token' && isNonEmptyToken(value)) {
       return value;
     }
   }
-  if (window.jemaosRefreshToken) {
+  if (isNonEmptyToken(window.jemaosRefreshToken)) {
     return window.jemaosRefreshToken;
   }
   try {
     const t = sessionStorage.getItem('jemaos_refresh_token');
-    if (t) return t;
-  } catch {}
+    if (isNonEmptyToken(t)) {
+      return t;
+    }
+  } catch {
+    /* storage indisponible */
+  }
   try {
     const t = localStorage.getItem('jemaos_refresh_token');
-    if (t) return t;
-  } catch {}
+    if (isNonEmptyToken(t)) {
+      return t;
+    }
+  } catch {
+    /* storage indisponible */
+  }
   return null;
 }
 
@@ -379,24 +449,26 @@ async function tryRefreshToken(): Promise<boolean> {
   if (window.getJemaOSRefreshToken) {
     try {
       const t = await window.getJemaOSRefreshToken();
-      if (t) refreshToken = t;
+      if (isNonEmptyToken(t)) {
+        refreshToken = t;
+      }
     } catch {
       // fall through
     }
   }
-  if (!refreshToken) {
-    refreshToken = getRefreshTokenFromStores();
-  }
-  if (!refreshToken) {
+  refreshToken ??= getRefreshTokenFromStores();
+  if (refreshToken === null || refreshToken === '') {
     // Dernier recours : le portail jema-auth (iframe) fournit les jetons
     // issus du login OS, y compris le refresh token.
     const portal = await requestTokensFromPortal();
-    if (portal.refreshToken) {
+    if (isNonEmptyToken(portal.refreshToken)) {
       refreshToken = portal.refreshToken;
       storePortalTokens(portal.accessToken, portal.refreshToken);
     }
   }
-  if (!refreshToken) return false;
+  if (refreshToken === null || refreshToken === '') {
+    return false;
+  }
 
   try {
     const res = await fetch(REFRESH_URL, {
@@ -407,20 +479,35 @@ async function tryRefreshToken(): Promise<boolean> {
       },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
-    if (!res.ok) return false;
+    if (!res.ok) {
+      return false;
+    }
 
-    const data = await res.json();
-    const t = data?.access_token || data?.accessToken || data?.token;
-    if (typeof t !== 'string' || !t) return false;
+    const data: unknown = await res.json().catch(() => null);
+    const payload = (typeof data === 'object' && data !== null ? data : {}) as {
+      access_token?: unknown;
+      accessToken?: unknown;
+      token?: unknown;
+      refresh_token?: unknown;
+      refreshToken?: unknown;
+    };
+    const t = (payload.access_token ?? payload.accessToken ?? payload.token) as string | undefined;
+    if (typeof t !== 'string' || t.length === 0) {
+      return false;
+    }
     sessionStorage.setItem('jemaos_access_token', t);
     // Cookie partagé : les autres PWA JemaOS liront directement le
     // nouvel access token (même session, même appareil).
     document.cookie = `jemaos_access_token=${t}; Domain=.jemaos.com; Path=/; Secure; SameSite=Lax; Max-Age=86400`;
 
-    const rt = data?.refresh_token || data?.refreshToken;
-    if (typeof rt === 'string' && rt) {
+    const rt = (payload.refresh_token ?? payload.refreshToken) as string | undefined;
+    if (typeof rt === 'string' && rt.length > 0) {
       sessionStorage.setItem('jemaos_refresh_token', rt);
-      try { localStorage.setItem('jemaos_refresh_token', rt); } catch {}
+      try {
+        localStorage.setItem('jemaos_refresh_token', rt);
+      } catch {
+        /* ignore */
+      }
       document.cookie = `jemaos_refresh_token=${rt}; Domain=.jemaos.com; Path=/; Secure; SameSite=Lax; Max-Age=604800`;
     }
     return true;
@@ -432,7 +519,7 @@ async function tryRefreshToken(): Promise<boolean> {
 async function verifySubscription(): Promise<VerifyOutcome> {
   let token = await getAccessToken();
 
-  if (token) {
+  if (isNonEmptyToken(token)) {
     const r = await checkSubscription(token);
     if (r === 'ok') {
       markSubscriptionOk();
@@ -442,7 +529,9 @@ async function verifySubscription(): Promise<VerifyOutcome> {
       clearSubscriptionGrace();
       return 'denied';
     }
-    if (r === 'error') return inGracePeriod() ? 'allowed' : 'retry';
+    if (r === 'error') {
+      return inGracePeriod() ? 'allowed' : 'retry';
+    }
 
     // r === 'unauthorized' : token rejeté (expiré ~24 h). On le met de
     // côté, on tente un refresh, puis on revérifie une fois.
@@ -453,13 +542,15 @@ async function verifySubscription(): Promise<VerifyOutcome> {
       // être en cours de refresh (cycle 15 min) : re-lecture du cookie
       // partagé quelques secondes plus tard, puis re-check.
       const fresh = await waitForManagedTokenRefresh(stale);
-      if (fresh) {
+      if (isNonEmptyToken(fresh)) {
         const r2 = await checkSubscription(fresh);
         if (r2 === 'ok') {
           markSubscriptionOk();
           return 'allowed';
         }
-        if (r2 === 'error') return inGracePeriod() ? 'allowed' : 'retry';
+        if (r2 === 'error') {
+          return inGracePeriod() ? 'allowed' : 'retry';
+        }
         if (r2 === 'no-subscription') {
           clearSubscriptionGrace();
           return 'denied';
@@ -469,13 +560,15 @@ async function verifySubscription(): Promise<VerifyOutcome> {
     }
     if (await tryRefreshToken()) {
       token = await getAccessToken(stale);
-      if (token) {
+      if (isNonEmptyToken(token)) {
         const r2 = await checkSubscription(token);
         if (r2 === 'ok') {
           markSubscriptionOk();
           return 'allowed';
         }
-        if (r2 === 'error') return inGracePeriod() ? 'allowed' : 'retry';
+        if (r2 === 'error') {
+          return inGracePeriod() ? 'allowed' : 'retry';
+        }
         if (r2 === 'no-subscription') {
           clearSubscriptionGrace();
           return 'denied';
@@ -491,13 +584,15 @@ async function verifySubscription(): Promise<VerifyOutcome> {
   // de session) : on attend un peu une valeur de l'OS avant de conclure.
   if (isOsManagedSession()) {
     const managedToken = await waitForManagedTokenRefresh('');
-    if (managedToken) {
+    if (isNonEmptyToken(managedToken)) {
       const r = await checkSubscription(managedToken);
       if (r === 'ok') {
         markSubscriptionOk();
         return 'allowed';
       }
-      if (r === 'error') return inGracePeriod() ? 'allowed' : 'retry';
+      if (r === 'error') {
+        return inGracePeriod() ? 'allowed' : 'retry';
+      }
       if (r === 'no-subscription') {
         clearSubscriptionGrace();
         return 'denied';
@@ -507,13 +602,15 @@ async function verifySubscription(): Promise<VerifyOutcome> {
   }
   if (await tryRefreshToken()) {
     token = await getAccessToken();
-    if (token) {
+    if (isNonEmptyToken(token)) {
       const r = await checkSubscription(token);
       if (r === 'ok') {
         markSubscriptionOk();
         return 'allowed';
       }
-      if (r === 'error') return inGracePeriod() ? 'allowed' : 'retry';
+      if (r === 'error') {
+        return inGracePeriod() ? 'allowed' : 'retry';
+      }
       if (r === 'no-subscription') {
         clearSubscriptionGrace();
         return 'denied';
@@ -542,16 +639,18 @@ function JemaOSLogo() {
 
 function LockIcon() {
   return (
-    <div style={{
-      width: '72px',
-      height: '72px',
-      borderRadius: '50%',
-      background: 'rgba(79, 70, 229, 0.1)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: '0 auto 1.5rem',
-    }}>
+    <div
+      style={{
+        width: '72px',
+        height: '72px',
+        borderRadius: '50%',
+        background: 'rgba(79, 70, 229, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0 auto 1.5rem',
+      }}
+    >
       <svg
         width="32"
         height="32"
@@ -569,7 +668,12 @@ function LockIcon() {
   );
 }
 
-function UpgradeScreen({ appName, onReconnect, reconnecting = false, reconnectError = false }: {
+function UpgradeScreen({
+  appName,
+  onReconnect,
+  reconnecting = false,
+  reconnectError = false,
+}: {
   appName: string;
   onReconnect?: () => void;
   reconnecting?: boolean;
@@ -577,58 +681,75 @@ function UpgradeScreen({ appName, onReconnect, reconnecting = false, reconnectEr
 }) {
   const reconnectUrl = `${AUTH_URL}?return_to=${encodeURIComponent(window.location.href)}`;
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      background: 'linear-gradient(145deg, #0b0f1a 0%, #151b2b 50%, #1a1f35 100%)',
-      color: '#0f172a',
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      textAlign: 'center',
-      padding: '1rem',
-      boxSizing: 'border-box',
-      overflow: 'auto',
-    }}>
-      <div style={{
-        flex: '1 0 auto',
+    <div
+      style={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        padding: '1rem 0',
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.96)',
-          borderRadius: '28px',
-          padding: '2rem 2rem',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        background: 'linear-gradient(145deg, #0b0f1a 0%, #151b2b 50%, #1a1f35 100%)',
+        color: '#0f172a',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        textAlign: 'center',
+        padding: '1rem',
+        boxSizing: 'border-box',
+        overflow: 'auto',
+      }}
+    >
+      <div
+        style={{
+          flex: '1 0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           width: '100%',
-          maxWidth: '420px',
-          boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.45)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-        }}>
+          padding: '1rem 0',
+        }}
+      >
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.96)',
+            borderRadius: '28px',
+            padding: '2rem 2rem',
+            width: '100%',
+            maxWidth: '420px',
+            boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.45)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          }}
+        >
           <div style={{ marginBottom: '2rem' }}>
             <JemaOSLogo />
           </div>
           <LockIcon />
-          <h1 style={{
-            fontSize: '1.75rem',
-            fontWeight: 700,
-            margin: '0 0 0.75rem',
-            letterSpacing: '-0.02em',
-            color: '#0f172a',
-          }}>
+          <h1
+            style={{
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              margin: '0 0 0.75rem',
+              letterSpacing: '-0.02em',
+              color: '#0f172a',
+            }}
+          >
             {appName}
           </h1>
-          <p style={{
-            fontSize: '1rem',
-            color: '#475569',
-            margin: '0 0 2rem',
-            lineHeight: 1.6,
-          }}>
+          <p
+            style={{
+              fontSize: '1rem',
+              color: '#475569',
+              margin: '0 0 2rem',
+              lineHeight: 1.6,
+            }}
+          >
             Cette application nécessite un abonnement JemaOS Pro.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              alignItems: 'center',
+            }}
+          >
             <a
               href="https://www.jemaos.com/tarifs"
               target="_blank"
@@ -697,13 +818,15 @@ function UpgradeScreen({ appName, onReconnect, reconnecting = false, reconnectEr
           </div>
         </div>
       </div>
-      <div style={{
-        flexShrink: 0,
-        textAlign: 'center',
-        padding: '0.75rem 0',
-        fontSize: '0.8rem',
-        color: 'rgba(255, 255, 255, 0.45)',
-      }}>
+      <div
+        style={{
+          flexShrink: 0,
+          textAlign: 'center',
+          padding: '0.75rem 0',
+          fontSize: '0.8rem',
+          color: 'rgba(255, 255, 255, 0.45)',
+        }}
+      >
         © Jema Technology 2026
       </div>
     </div>
@@ -712,15 +835,17 @@ function UpgradeScreen({ appName, onReconnect, reconnecting = false, reconnectEr
 
 function LoadingScreen() {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      background: '#0b0f1a',
-      color: '#f8fafc',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: '#0b0f1a',
+        color: '#f8fafc',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+      }}
+    >
       <div style={{ fontSize: '1.2rem' }}>Chargement…</div>
     </div>
   );
@@ -757,7 +882,9 @@ function ReconnectScreen({ appName }: { appName: string }) {
     let cancelled = false;
     const attempt = async () => {
       const outcome = await verifySubscription();
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
       if (outcome === 'allowed') {
         clearReauthAttempt();
         window.location.replace(returnTo);
@@ -765,8 +892,10 @@ function ReconnectScreen({ appName }: { appName: string }) {
         setFailed(true);
       }
     };
-    attempt();
-    return () => { cancelled = true; };
+    void attempt();
+    return () => {
+      cancelled = true;
+    };
   }, [returnTo]);
 
   // Échec de la reconnexion silencieuse : on affiche le mur classique
@@ -776,7 +905,9 @@ function ReconnectScreen({ appName }: { appName: string }) {
     return (
       <UpgradeScreen
         appName={appName}
-        onReconnect={handleReconnect}
+        onReconnect={() => {
+          void handleReconnect();
+        }}
         reconnecting={reconnecting}
         reconnectError={reconnectError}
       />
@@ -784,44 +915,52 @@ function ReconnectScreen({ appName }: { appName: string }) {
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      background: 'linear-gradient(145deg, #0b0f1a 0%, #151b2b 50%, #1a1f35 100%)',
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      textAlign: 'center',
-      padding: '1rem',
-      boxSizing: 'border-box',
-    }}>
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.96)',
-        borderRadius: '28px',
-        padding: '2rem',
-        width: '100%',
-        maxWidth: '420px',
-        boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.45)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-      }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: 'linear-gradient(145deg, #0b0f1a 0%, #151b2b 50%, #1a1f35 100%)',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        textAlign: 'center',
+        padding: '1rem',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          background: 'rgba(255, 255, 255, 0.96)',
+          borderRadius: '28px',
+          padding: '2rem',
+          width: '100%',
+          maxWidth: '420px',
+          boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.45)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+        }}
+      >
         <div style={{ marginBottom: '2rem' }}>
           <JemaOSLogo />
         </div>
-        <h1 style={{
-          fontSize: '1.5rem',
-          fontWeight: 700,
-          margin: '0 0 0.75rem',
-          color: '#0f172a',
-        }}>
+        <h1
+          style={{
+            fontSize: '1.5rem',
+            fontWeight: 700,
+            margin: '0 0 0.75rem',
+            color: '#0f172a',
+          }}
+        >
           Reconnexion en cours…
         </h1>
-        <p style={{
-          fontSize: '1rem',
-          color: '#475569',
-          margin: 0,
-          lineHeight: 1.6,
-        }}>
+        <p
+          style={{
+            fontSize: '1rem',
+            color: '#475569',
+            margin: 0,
+            lineHeight: 1.6,
+          }}
+        >
           Vérification de votre session JemaOS. Vous allez être redirigé automatiquement.
         </p>
       </div>
@@ -840,16 +979,15 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ appName, c
   // fait en arrière-plan (stale-while-revalidate). Une révocation serveur
   // ('denied') affiche quand même le mur au premier tick ; l'expiration de la
   // grâce ramène vers /auth via 'reauth'.
-  const [status, setStatus] = useState<'loading' | 'allowed' | 'denied'>(
-    () => inGracePeriod() ? 'allowed' : 'loading'
+  const [status, setStatus] = useState<'loading' | 'allowed' | 'denied'>(() =>
+    inGracePeriod() ? 'allowed' : 'loading'
   );
   const [reconnecting, setReconnecting] = useState(false);
   const [reconnectError, setReconnectError] = useState(false);
   // Page /auth propre à l'app, rendue par ce guard AU-DESSUS du routeur :
   // la reconnexion se fait sans jamais quitter le domaine de l'app.
   // L'hôte SSO (Nephtys) a sa propre page /auth via son routeur.
-  const onAuthPath =
-    !IS_SSO_HOST && window.location.pathname.replace(/\/+$/, '') === '/auth';
+  const onAuthPath = !IS_SSO_HOST && window.location.pathname.replace(/\/+$/, '') === '/auth';
 
   // Reconnexion INTERNE depuis le mur : nouvelle vérification immédiate
   // (cookie, jeton OEM via getJemaOSToken, refresh backend) sans quitter
@@ -870,7 +1008,9 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ appName, c
     let cancelled = false;
     const verify = async () => {
       const outcome = await verifySubscription();
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
       if (outcome === 'allowed') {
         setStatus('allowed');
       } else if (outcome === 'reauth') {
@@ -878,7 +1018,9 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ appName, c
         // (jamais vers Nephtys). Le mur "Se reconnecter" n'apparaît que si
         // l'aller-retour a déjà échoué une fois (cas de bug) — protection
         // anti-boucle via REAUTH_FLAG.
-        if (onAuthPath) return; // la page /auth gère elle-même la suite
+        if (onAuthPath) {
+          return;
+        } // la page /auth gère elle-même la suite
         if (reauthAlreadyAttempted()) {
           setStatus('denied');
         } else {
@@ -894,18 +1036,32 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ appName, c
       // l'écran courant (chargement au démarrage, app si déjà admis) et
       // on retentera au prochain tick, jamais de mur sur une panne réseau.
     };
-    verify();
-    const interval = setInterval(verify, 5 * 60 * 1000);
-    return () => { cancelled = true; clearInterval(interval); };
+    void verify();
+    const interval = setInterval(
+      () => {
+        void verify();
+      },
+      5 * 60 * 1000
+    );
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [onAuthPath]);
 
-  if (onAuthPath) return <ReconnectScreen appName={appName} />;
-  if (status === 'loading') return <LoadingScreen />;
+  if (onAuthPath) {
+    return <ReconnectScreen appName={appName} />;
+  }
+  if (status === 'loading') {
+    return <LoadingScreen />;
+  }
   if (status === 'denied') {
     return (
       <UpgradeScreen
         appName={appName}
-        onReconnect={handleReconnect}
+        onReconnect={() => {
+          void handleReconnect();
+        }}
         reconnecting={reconnecting}
         reconnectError={reconnectError}
       />
