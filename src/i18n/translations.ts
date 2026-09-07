@@ -841,17 +841,9 @@ export const translations: Record<Lang, Record<string, string>> = {
   },
 };
 
-// Detect system language (JemaOS: the system language always wins on load)
-export function getSystemLang(): Lang {
-  const nav = navigator as { language?: string; userLanguage?: string };
-  const browserLang = nav.language ?? nav.userLanguage ?? 'fr';
-  const short = browserLang.split('-')[0].toLowerCase();
-  return short === 'fr' ? 'fr' : 'en';
-}
-
 // Module-level language used by non-React code (services, hooks outside providers).
-// Kept in sync by the LanguageProvider on every language change.
-let currentLang: Lang = getSystemLang();
+// French by default for JemaOS PWAs; kept in sync by the LanguageProvider.
+let currentLang: Lang = 'fr';
 
 export function setI18nLang(lang: Lang) {
   currentLang = lang;
