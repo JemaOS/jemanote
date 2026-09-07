@@ -4,7 +4,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
-  getSystemLang,
   localeFor,
   lookupTranslation,
   setI18nLang,
@@ -22,14 +21,9 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { readonly children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(getSystemLang);
-
-  useEffect(() => {
-    // JemaOS: the system language always wins on the languagechange event
-    window.addEventListener('languagechange', () => {
-      setLangState(getSystemLang());
-    });
-  }, []);
+  // French by default for JemaOS PWAs; the selector is a session-only
+  // override (never persisted).
+  const [lang, setLangState] = useState<Lang>('fr');
 
   useEffect(() => {
     document.documentElement.lang = lang;
