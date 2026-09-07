@@ -4,6 +4,8 @@
 import { Play, Pause } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 interface WaveformPlayerProps {
   readonly blob: Blob;
   readonly height?: number;
@@ -17,6 +19,7 @@ export default function WaveformPlayer({
   color = 'rgb(212, 212, 212)',
   progressColor = '#5a63e9',
 }: WaveformPlayerProps) {
+  const { t } = useLanguage();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -160,7 +163,7 @@ export default function WaveformPlayer({
       <button
         onClick={togglePlay}
         className="flex items-center justify-center w-8 h-8 bg-primary-500 text-white rounded-full hover:bg-primary-600 transition-all flex-shrink-0"
-        aria-label={isPlaying ? 'Pause' : 'Lecture'}
+        aria-label={isPlaying ? t('pause') : t('playback')}
       >
         {isPlaying ? (
           <Pause className="h-4 w-4 fill-white" />

@@ -10,6 +10,7 @@ import Navigation from '@/components/layout/Navigation';
 import StatusBar from '@/components/layout/StatusBar';
 import WorkspaceView from '@/components/workspace/WorkspaceView';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocalNotes } from '@/hooks/useLocalNotes';
 import { ViewMode } from '@/types';
@@ -26,6 +27,7 @@ const Sidebar = React.lazy(() => import('@/components/layout/Sidebar'));
 
 function App() {
   const { toggleTheme } = useTheme();
+  const { t } = useLanguage();
   const { user, loading, signOut } = useAuth();
   const {
     notes,
@@ -197,7 +199,7 @@ function App() {
   };
 
   const handleCreateNote = async () => {
-    const result = await createNote('Nouvelle note', '');
+    const result = await createNote(t('newNote'), '');
     if (result.data) {
       setActiveNoteId(result.data.id);
       setCurrentView('workspace');
@@ -219,7 +221,7 @@ function App() {
       <div className="flex h-screen items-center justify-center bg-neutral-50">
         <div className="text-center">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent mx-auto"></div>
-          <p className="text-body text-neutral-700">Chargement...</p>
+          <p className="text-body text-neutral-700">{t('loading')}</p>
         </div>
       </div>
     );
@@ -313,7 +315,7 @@ function App() {
             onClick={() => {
               setLeftSidebarOpen(false);
             }}
-            aria-label="Fermer le menu"
+            aria-label={t('closeMenu')}
           />
         )}
 

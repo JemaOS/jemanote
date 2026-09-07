@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+import LanguageSelector from '@/components/LanguageSelector';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { ViewMode, User } from '@/types';
 
 interface NavigationProps {
@@ -46,6 +48,7 @@ export default function Navigation({
   onSearchQueryChange,
 }: NavigationProps) {
   const { signOut } = useAuth();
+  const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -68,7 +71,7 @@ export default function Navigation({
 
   return (
     <nav
-      aria-label="Navigation principale"
+      aria-label={t('mainNavigation')}
       className="h-12 xs:h-13 sm:h-14 md:h-15 laptop-sm:h-16 laptop:h-[4.5rem] bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 flex items-center px-2 xs:px-2.5 sm:px-3 md:px-4 laptop-sm:px-5 laptop:px-6 laptop-lg:px-8 gap-1.5 xs:gap-2 sm:gap-2.5 md:gap-3 laptop-sm:gap-4 laptop:gap-6 relative z-20"
     >
       {/* Mobile & Tablet: Logo + Search Icon + Menu */}
@@ -76,8 +79,8 @@ export default function Navigation({
         <button
           onClick={onToggleLeftSidebar}
           className="p-1.5 xs:p-2 sm:p-2 md:p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors min-w-[40px] min-h-[40px] xs:min-w-[44px] xs:min-h-[44px] flex items-center justify-center"
-          title={leftSidebarOpen ? 'Masquer la barre latérale' : 'Afficher la barre latérale'}
-          aria-label={leftSidebarOpen ? 'Masquer la barre latérale' : 'Afficher la barre latérale'}
+          title={leftSidebarOpen ? t('hideSidebar') : t('showSidebar')}
+          aria-label={leftSidebarOpen ? t('hideSidebar') : t('showSidebar')}
         >
           {leftSidebarOpen ? (
             <SidebarClose className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5 md:h-6 md:w-6 text-neutral-700 dark:text-neutral-300" />
@@ -95,19 +98,21 @@ export default function Navigation({
             onViewChange('search');
           }}
           className="p-1.5 xs:p-2 sm:p-2 md:p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors min-w-[40px] min-h-[40px] xs:min-w-[44px] xs:min-h-[44px] flex items-center justify-center"
-          title="Rechercher"
-          aria-label="Rechercher"
+          title={t('search')}
+          aria-label={t('search')}
         >
           <Search className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5 md:h-6 md:w-6 text-neutral-700 dark:text-neutral-300" />
         </button>
+
+        <LanguageSelector variant="mobile" />
 
         <button
           onClick={() => {
             setMobileMenuOpen(!mobileMenuOpen);
           }}
           className="p-1.5 xs:p-2 sm:p-2 md:p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors min-w-[40px] min-h-[40px] xs:min-w-[44px] xs:min-h-[44px] flex items-center justify-center"
-          title="Menu"
-          aria-label="Menu"
+          title={t('menu')}
+          aria-label={t('menu')}
           aria-expanded={mobileMenuOpen}
         >
           {mobileMenuOpen ? (
@@ -123,8 +128,8 @@ export default function Navigation({
         <button
           onClick={onToggleLeftSidebar}
           className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors laptop:p-2.5"
-          title={leftSidebarOpen ? 'Masquer la barre latérale' : 'Afficher la barre latérale'}
-          aria-label={leftSidebarOpen ? 'Masquer la barre latérale' : 'Afficher la barre latérale'}
+          title={leftSidebarOpen ? t('hideSidebar') : t('showSidebar')}
+          aria-label={leftSidebarOpen ? t('hideSidebar') : t('showSidebar')}
         >
           {leftSidebarOpen ? (
             <SidebarClose className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6 text-neutral-700 dark:text-neutral-300" />
@@ -142,7 +147,7 @@ export default function Navigation({
             <Search className="absolute left-3 laptop:left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 laptop:h-5 laptop:w-5 text-neutral-500 dark:text-neutral-400" />
             <input
               type="text"
-              placeholder="Rechercher des notes..."
+              placeholder={t('searchNotesPlaceholder')}
               value={searchQuery}
               onChange={e => {
                 onSearchQueryChange?.(e.target.value);
@@ -166,8 +171,8 @@ export default function Navigation({
               onViewChange('workspace');
             }}
             className={`p-2 laptop:p-2.5 rounded-md transition-colors ${viewButtonClass('workspace')}`}
-            title="Espace de travail"
-            aria-label="Espace de travail"
+            title={t('workspace')}
+            aria-label={t('workspace')}
           >
             <Layout className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6" />
           </button>
@@ -177,8 +182,8 @@ export default function Navigation({
               onViewChange('canvas');
             }}
             className={`p-2 laptop:p-2.5 rounded-md transition-colors ${viewButtonClass('canvas')}`}
-            title="Canvas"
-            aria-label="Canvas"
+            title={t('canvas')}
+            aria-label={t('canvas')}
           >
             <LayoutTemplate className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6" />
           </button>
@@ -188,8 +193,8 @@ export default function Navigation({
               onViewChange('timeline');
             }}
             className={`p-2 laptop:p-2.5 rounded-md transition-colors ${viewButtonClass('timeline')}`}
-            title="Chronologie"
-            aria-label="Chronologie"
+            title={t('timeline')}
+            aria-label={t('timeline')}
           >
             <History className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6" />
           </button>
@@ -199,8 +204,8 @@ export default function Navigation({
               onViewChange('settings');
             }}
             className={`p-2 laptop:p-2.5 rounded-md transition-colors ${viewButtonClass('settings')}`}
-            title="Paramètres"
-            aria-label="Paramètres"
+            title={t('settings')}
+            aria-label={t('settings')}
           >
             <Settings className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6" />
           </button>
@@ -209,8 +214,8 @@ export default function Navigation({
           <button
             onClick={onToggleRightSidebar}
             className="hidden laptop-sm:block p-2 laptop:p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
-            title={rightSidebarOpen ? "Masquer l'inspecteur" : "Afficher l'inspecteur"}
-            aria-label={rightSidebarOpen ? "Masquer l'inspecteur" : "Afficher l'inspecteur"}
+            title={rightSidebarOpen ? t('hideInspector') : t('showInspector')}
+            aria-label={rightSidebarOpen ? t('hideInspector') : t('showInspector')}
           >
             {rightSidebarOpen ? (
               <PanelRightOpen className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6 text-neutral-700 dark:text-neutral-300" />
@@ -218,6 +223,8 @@ export default function Navigation({
               <SidebarClose className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6 text-neutral-700 dark:text-neutral-300" />
             )}
           </button>
+
+          <LanguageSelector variant="desktop" />
         </div>
 
         {/* Bouton connexion séparé - tout à droite */}
@@ -225,8 +232,8 @@ export default function Navigation({
           <button
             onClick={handleSignOut}
             className="ml-auto p-2 laptop:p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors text-neutral-700 dark:text-neutral-300"
-            title="Se déconnecter"
-            aria-label="Se déconnecter"
+            title={t('signOut')}
+            aria-label={t('signOut')}
           >
             <LogOut className="h-5 w-5 laptop:h-5.5 laptop:w-5.5 laptop-lg:h-6 laptop-lg:w-6" />
           </button>
@@ -234,11 +241,11 @@ export default function Navigation({
           <button
             onClick={onShowAuth}
             className="ml-auto px-3 laptop:px-4 laptop-lg:px-5 h-9 laptop:h-10 laptop-lg:h-11 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors flex items-center gap-2 font-semibold text-sm laptop:text-base whitespace-nowrap"
-            title="Se connecter pour synchroniser"
-            aria-label="Se connecter pour synchroniser"
+            title={t('signInToSync')}
+            aria-label={t('signInToSync')}
           >
             <LogIn className="h-4 w-4 laptop:h-4.5 laptop:w-4.5" />
-            <span className="hidden laptop:inline">Connexion</span>
+            <span className="hidden laptop:inline">{t('login')}</span>
           </button>
         )}
       </div>
@@ -254,7 +261,7 @@ export default function Navigation({
               className={mobileViewButtonClass('workspace')}
             >
               <Layout className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5" />
-              <span className="font-medium">Espace de travail</span>
+              <span className="font-medium">{t('workspace')}</span>
             </button>
 
             <button
@@ -264,7 +271,7 @@ export default function Navigation({
               className={mobileViewButtonClass('canvas')}
             >
               <LayoutTemplate className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5" />
-              <span className="font-medium">Canvas</span>
+              <span className="font-medium">{t('canvas')}</span>
             </button>
 
             <button
@@ -274,7 +281,7 @@ export default function Navigation({
               className={mobileViewButtonClass('timeline')}
             >
               <History className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5" />
-              <span className="font-medium">Chronologie</span>
+              <span className="font-medium">{t('timeline')}</span>
             </button>
 
             <button
@@ -284,7 +291,7 @@ export default function Navigation({
               className={mobileViewButtonClass('settings')}
             >
               <Settings className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5" />
-              <span className="font-medium">Paramètres</span>
+              <span className="font-medium">{t('settings')}</span>
             </button>
 
             <div className="border-t border-neutral-200 dark:border-neutral-800 my-1.5 xs:my-2" />
@@ -295,7 +302,7 @@ export default function Navigation({
                 className="w-full flex items-center gap-2 xs:gap-2.5 sm:gap-3 px-3 xs:px-3.5 sm:px-4 py-2.5 xs:py-2.75 sm:py-3 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors min-h-[44px] text-sm xs:text-base"
               >
                 <LogOut className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5" />
-                <span className="font-medium">Se déconnecter</span>
+                <span className="font-medium">{t('signOut')}</span>
               </button>
             ) : (
               <button
@@ -306,7 +313,7 @@ export default function Navigation({
                 className="w-full flex items-center gap-2 xs:gap-2.5 sm:gap-3 px-3 xs:px-3.5 sm:px-4 py-2.5 xs:py-2.75 sm:py-3 rounded-md bg-primary-500 text-white hover:bg-primary-600 transition-colors font-semibold min-h-[44px] text-sm xs:text-base"
               >
                 <LogIn className="h-4.5 w-4.5 xs:h-5 xs:w-5 sm:h-5.5 sm:w-5.5" />
-                <span>Se connecter</span>
+                <span>{t('signIn')}</span>
               </button>
             )}
           </div>

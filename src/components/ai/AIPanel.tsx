@@ -9,6 +9,7 @@
 import { X, Sparkles, Tag, Lightbulb, FileText, Link as LinkIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { aiService, type SummaryHistoryEntry } from '@/services/ai/mistralService';
 import { linkDetectionService, type LinkSuggestion } from '@/services/linkDetectionService';
 import type { Note } from '@/types';
@@ -34,6 +35,7 @@ export default function AIPanel({
   onUpdateNoteContent,
   onNavigateToNote,
 }: AIPanelProps) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('summary');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +92,7 @@ export default function AIPanel({
   // Fonction: Générer un résumé
   const handleGenerateSummary = async () => {
     if (!currentNote?.content) {
-      setError('Aucune note sélectionnée ou note vide');
+      setError(t('noNoteOrEmpty'));
       return;
     }
 
@@ -116,24 +118,19 @@ export default function AIPanel({
       setSummaryHistory(history);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Erreur lors de la génération du résumé';
+        err instanceof Error ? err.message : t('summaryGenerationError');
 
       // Message plus clair pour l'utilisateur
       if (
         errorMessage.includes('API Mistral non configurée') ||
+        errorMessage.includes('Mistral API key not configured') ||
         errorMessage.includes('MISSING_API_KEY')
       ) {
-        setError(
-          "⚠️ Configuration manquante : La clé API Mistral n'est pas configurée sur le serveur Supabase. Veuillez suivre les instructions de configuration dans la documentation."
-        );
+        setError(t('mistralNotConfigured'));
       } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
-        setError(
-          '🔑 Clé API invalide : La clé API Mistral configurée est invalide ou expirée. Veuillez la vérifier dans la console Supabase.'
-        );
+        setError(t('mistralKeyInvalid'));
       } else if (errorMessage.includes('429')) {
-        setError(
-          "⏱️ Quota dépassé : Limite d'utilisation API atteinte. Veuillez réessayer plus tard ou mettre à niveau votre plan Mistral."
-        );
+        setError(t('mistralQuotaExceeded'));
       } else {
         setError(`❌ ${errorMessage}`);
       }
@@ -146,7 +143,7 @@ export default function AIPanel({
   // Fonction: Générer des tags
   const handleGenerateTags = async () => {
     if (!currentNote?.content) {
-      setError('Aucune note sélectionnée ou note vide');
+      setError(t('noNoteOrEmpty'));
       return;
     }
 
@@ -157,7 +154,7 @@ export default function AIPanel({
       const tags = await aiService.generateTags(currentNote.content, 8);
       setSuggestedTags(tags);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la génération des tags');
+      setError(err instanceof Error ? err.message : t('tagsGenerationError'));
     } finally {
       setLoading(false);
     }
@@ -182,7 +179,7 @@ export default function AIPanel({
     const topic = brainstormTopic ?? currentNote?.title ?? '';
 
     if (!topic) {
-      setError('Veuillez entrer un sujet de brainstorming');
+      setError(t('enterBrainstormTopic'));
       return;
     }
 
@@ -193,7 +190,7 @@ export default function AIPanel({
       const generatedIdeas = await aiService.generateIdeas(topic, currentNote?.content);
       setIdeas(generatedIdeas);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du brainstorming');
+      setError(err instanceof Error ? err.message : t('brainstormError'));
     } finally {
       setLoading(false);
     }
@@ -201,7 +198,7 @@ export default function AIPanel({
 
   // Fonction: Créer une note depuis une idée
   const handleCreateNoteFromIdea = async (idea: string) => {
-    await onCreateNote(`Idée: ${idea.substring(0, 50)}...`, idea);
+    await onCreateNote(t('ideaPrefix', { idea: idea.substring(0, 50) }) + '...', idea);
   };
 
   // Fonction: Ajouter l'idée à la note actuelle
@@ -209,14 +206,14 @@ export default function AIPanel({
     if (!currentNote || !onUpdateNoteContent) {
       return;
     }
-    const newContent = `${currentNote.content}\n\n### Idée IA\n${idea}`;
+    const newContent = `${currentNote.content}\n\n${t('aiIdeaHeading')}\n${idea}`;
     await onUpdateNoteContent(currentNote.id, newContent);
   };
 
   // Fonction: Synthèse multi-notes
   const handleSynthesis = async () => {
     if (selectedNotes.length === 0) {
-      setError('Veuillez sélectionner au moins une note');
+      setError(t('selectAtLeastOneNote'));
       return;
     }
 
@@ -231,7 +228,7 @@ export default function AIPanel({
       const result = await aiService.synthesizeNotes(notesToSynthesize);
       setSynthesis(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la synthèse');
+      setError(err instanceof Error ? err.message : t('synthesisError'));
     } finally {
       setLoading(false);
     }
@@ -242,14 +239,14 @@ export default function AIPanel({
     if (!synthesis) {
       return;
     }
-    await onCreateNote('Synthèse Multi-Notes', synthesis);
+    await onCreateNote(t('multiNotesSynthesis'), synthesis);
     setSynthesis('');
   };
 
   // Fonction: Détecter les liens automatiques
   const handleDetectLinks = async () => {
     if (!currentNote?.content) {
-      setError('Aucune note sélectionnée ou note vide');
+      setError(t('noNoteOrEmpty'));
       return;
     }
 
@@ -261,7 +258,7 @@ export default function AIPanel({
       const suggestions = linkDetectionService.detectLinks(currentNote, notes);
       setLinkSuggestions(suggestions);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la détection de liens');
+      setError(err instanceof Error ? err.message : t('linkDetectionError'));
     } finally {
       setLoadingLinks(false);
     }
@@ -288,7 +285,7 @@ export default function AIPanel({
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary-600" />
-          <h2 className="text-lg font-semibold">Assistant IA</h2>
+          <h2 className="text-lg font-semibold">{t('aiAssistant')}</h2>
         </div>
         <button
           onClick={onClose}
@@ -316,7 +313,7 @@ export default function AIPanel({
           })()}
         >
           <FileText className="w-4 h-4 inline mr-1" />
-          Résumés
+          {t('summaries')}
         </button>
         <button
           onClick={() => {
@@ -333,7 +330,7 @@ export default function AIPanel({
           })()}
         >
           <Tag className="w-4 h-4 inline mr-1" />
-          Tags
+          {t('tags')}
         </button>
         <button
           onClick={() => {
@@ -350,7 +347,7 @@ export default function AIPanel({
           })()}
         >
           <LinkIcon className="w-4 h-4 inline mr-1" />
-          Liens
+          {t('links')}
         </button>
         <button
           onClick={() => {
@@ -367,7 +364,7 @@ export default function AIPanel({
           })()}
         >
           <Lightbulb className="w-4 h-4 inline mr-1" />
-          Idées
+          {t('ideas')}
         </button>
         <button
           onClick={() => {
@@ -384,7 +381,7 @@ export default function AIPanel({
           })()}
         >
           <FileText className="w-4 h-4 inline mr-1" />
-          Synthèse
+          {t('synthesis')}
         </button>
       </div>
 
@@ -401,7 +398,7 @@ export default function AIPanel({
           <div className="space-y-4">
             <div>
               <label htmlFor="summary-type" className="block text-sm font-medium mb-2">
-                Type de résumé
+                {t('summaryType')}
               </label>
               <select
                 id="summary-type"
@@ -411,9 +408,9 @@ export default function AIPanel({
                 }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
               >
-                <option value="short">Résumé court</option>
-                <option value="detailed">Résumé détaillé</option>
-                <option value="bullets">Points clés</option>
+                <option value="short">{t('shortSummary')}</option>
+                <option value="detailed">{t('detailedSummary')}</option>
+                <option value="bullets">{t('keyPoints')}</option>
               </select>
             </div>
 
@@ -425,7 +422,7 @@ export default function AIPanel({
               type="button"
               className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Génération...' : 'Générer un résumé'}
+              {loading ? t('generating') : t('generateSummary')}
             </button>
 
             {summary && (
@@ -435,19 +432,19 @@ export default function AIPanel({
                 </p>
                 <button
                   onClick={() => {
-                    void onCreateNote(`Résumé - ${currentNote?.title ?? 'Note'}`, summary);
+                    void onCreateNote(t('summaryTitlePrefix', { title: currentNote?.title ?? t('note') }), summary);
                   }}
                   type="button"
                   className="mt-3 w-full px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
-                  Créer une note
+                  {t('createNote')}
                 </button>
               </div>
             )}
 
             {summaryHistory.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">Historique récent</h3>
+                <h3 className="text-sm font-medium mb-2">{t('recentHistory')}</h3>
                 <div className="space-y-2">
                   {summaryHistory.slice(0, 5).map(entry => (
                     <button
@@ -457,7 +454,7 @@ export default function AIPanel({
                       onClick={() => {
                         setSummary(entry.summary);
                       }}
-                      aria-label={`Voir le résumé: ${entry.noteTitle}`}
+                      aria-label={t('viewSummary', { title: entry.noteTitle ?? '' })}
                     >
                       <div className="font-medium text-xs text-gray-500 mb-1">
                         {entry.noteTitle} - {new Date(entry.timestamp).toLocaleDateString()}
@@ -484,12 +481,12 @@ export default function AIPanel({
               type="button"
               className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Génération...' : 'Générer des tags'}
+              {loading ? t('generating') : t('generateTags')}
             </button>
 
             {suggestedTags.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">Tags suggérés</h3>
+                <h3 className="text-sm font-medium mb-2">{t('suggestedTags')}</h3>
                 <div className="flex flex-wrap gap-2">
                   {suggestedTags.map(tag => (
                     <span
@@ -505,14 +502,14 @@ export default function AIPanel({
                   onClick={handleApplyTags}
                   className="mt-3 w-full px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
-                  Appliquer les tags
+                  {t('applyTags')}
                 </button>
               </div>
             )}
 
             {selectedTags.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">Tags actuels</h3>
+                <h3 className="text-sm font-medium mb-2">{t('currentTags')}</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedTags.map(tag => (
                     <span
@@ -532,7 +529,7 @@ export default function AIPanel({
         {activeTab === 'links' && (
           <div className="space-y-4">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Découvrez des notes similaires et créez des connexions automatiquement.
+              {t('discoverSimilarNotes')}
             </div>
 
             <button
@@ -543,12 +540,12 @@ export default function AIPanel({
               type="button"
               className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loadingLinks ? 'Analyse en cours...' : 'Détecter les liens'}
+              {loadingLinks ? t('analyzing') : t('detectLinks')}
             </button>
 
             {linkSuggestions.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">Notes liées suggérées</h3>
+                <h3 className="text-sm font-medium mb-2">{t('suggestedLinkedNotes')}</h3>
                 <div className="space-y-2">
                   {linkSuggestions.map(suggestion => (
                     <div
@@ -591,7 +588,7 @@ export default function AIPanel({
                         type="button"
                         className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                       >
-                        Insérer lien [[{suggestion.targetNoteTitle}]]
+                        {t('insertLink', { title: suggestion.targetNoteTitle })}
                       </button>
                     </div>
                   ))}
@@ -601,9 +598,9 @@ export default function AIPanel({
 
             {linkSuggestions.length === 0 && !loadingLinks && (
               <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
-                Aucune suggestion de lien pour le moment.
+                {t('noLinkSuggestions')}
                 <br />
-                Cliquez sur "Détecter les liens" pour analyser.
+                {t('noLinkSuggestionsHint')}
               </div>
             )}
           </div>
@@ -614,7 +611,7 @@ export default function AIPanel({
           <div className="space-y-4">
             <div>
               <label htmlFor="brainstorm-topic" className="block text-sm font-medium mb-2">
-                Sujet de brainstorming
+                {t('brainstormTopic')}
               </label>
               <input
                 id="brainstorm-topic"
@@ -623,7 +620,7 @@ export default function AIPanel({
                 onChange={e => {
                   setBrainstormTopic(e.target.value);
                 }}
-                placeholder={currentNote?.title ?? 'Entrez un sujet...'}
+                placeholder={currentNote?.title ?? t('enterTopicPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
               />
             </div>
@@ -636,12 +633,12 @@ export default function AIPanel({
               type="button"
               className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Génération...' : 'Générer des idées'}
+              {loading ? t('generating') : t('generateIdeas')}
             </button>
 
             {ideas.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">Idées générées</h3>
+                <h3 className="text-sm font-medium mb-2">{t('generatedIdeas')}</h3>
                 <div className="space-y-2">
                   {ideas.map((idea, index) => (
                     <div
@@ -657,7 +654,7 @@ export default function AIPanel({
                           type="button"
                           className="text-xs text-primary-600 hover:text-primary-700"
                         >
-                          Créer une note
+                          {t('createNote')}
                         </button>
                         {onUpdateNoteContent && (
                           <button
@@ -667,7 +664,7 @@ export default function AIPanel({
                             type="button"
                             className="text-xs text-primary-600 hover:text-primary-700"
                           >
-                            Ajouter à la note
+                            {t('addToNote')}
                           </button>
                         )}
                       </div>
@@ -683,7 +680,7 @@ export default function AIPanel({
         {activeTab === 'synthesis' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium mb-2">Sélectionner les notes</h3>
+              <h3 className="text-sm font-medium mb-2">{t('selectNotes')}</h3>
               <div className="max-h-[200px] overflow-y-auto space-y-1">
                 {notes.map(note => (
                   <label
@@ -716,7 +713,7 @@ export default function AIPanel({
               type="button"
               className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Génération...' : `Synthétiser ${String(selectedNotes.length)} note(s)`}
+              {loading ? t('generating') : t('synthesizeNotesCount', { count: selectedNotes.length })}
             </button>
 
             {synthesis && (
@@ -731,7 +728,7 @@ export default function AIPanel({
                   type="button"
                   className="mt-3 w-full px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
-                  Créer une note
+                  {t('createNote')}
                 </button>
               </div>
             )}

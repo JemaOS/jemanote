@@ -4,6 +4,7 @@
 import { Eye, Edit3, Columns2, Sparkles, Lightbulb, X, Bot, Mic } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { LocalStorage } from '@/lib/localStorage';
 import { Note, Attachment } from '@/types';
 
@@ -44,6 +45,7 @@ export default function WorkspaceView({
   updateNote,
   createNote,
 }: WorkspaceViewProps) {
+  const { t } = useLanguage();
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
@@ -357,7 +359,7 @@ export default function WorkspaceView({
       await LocalStorage.saveAttachment(attachment, blob);
 
       // Ajouter le lien vers l'audio dans la note (format Markdown image avec protocole attachment:)
-      const audioTag = `\n\n![Mémo vocal](attachment:${attachmentId})\n\n`;
+      const audioTag = `\n\n![${t('voiceMemo')}](attachment:${attachmentId})\n\n`;
       const newContent = content + audioTag;
 
       setContent(newContent);
@@ -366,7 +368,7 @@ export default function WorkspaceView({
       setShowVoiceRecorder(false);
     } catch (error) {
       console.error('Erreur sauvegarde mémo vocal:', error);
-      alert('Erreur lors de la sauvegarde du mémo vocal');
+      alert(t('voiceMemoSaveError'));
     }
   };
 
@@ -387,10 +389,10 @@ export default function WorkspaceView({
       <div className="flex h-full items-center justify-center bg-white dark:bg-neutral-900">
         <div className="text-center">
           <p className="text-body-large text-neutral-700 dark:text-neutral-300 mb-2">
-            Aucune note sélectionnée
+            {t('noNoteSelected')}
           </p>
           <p className="text-body text-neutral-500 dark:text-neutral-400">
-            Sélectionnez une note dans la barre latérale ou créez-en une nouvelle
+            {t('selectOrCreateNote')}
           </p>
         </div>
       </div>
@@ -406,10 +408,10 @@ export default function WorkspaceView({
             <Lightbulb className="w-4 h-4 laptop:w-5 laptop:h-5 laptop-lg:w-5.5 laptop-lg:h-5.5 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-xs laptop:text-sm laptop-lg:text-base text-primary-900 dark:text-primary-100 font-medium mb-0.5">
-                Votre note est assez longue !
+                {t('noteIsLong')}
               </p>
               <p className="text-xs laptop:text-sm text-primary-700 dark:text-primary-300">
-                Générez un résumé automatique avec l'IA.
+                {t('generateSummaryWithAI')}
               </p>
             </div>
             <div className="flex items-center gap-1.5">
@@ -417,12 +419,12 @@ export default function WorkspaceView({
                 onClick={handleOpenAIFromSuggest}
                 className="px-2 laptop:px-3 laptop-lg:px-4 py-1 laptop:py-1.5 text-xs laptop:text-sm laptop-lg:text-base bg-primary-500 text-white hover:bg-primary-600 rounded transition-colors font-medium whitespace-nowrap min-h-[32px] laptop:min-h-[36px]"
               >
-                Générer
+                {t('generate')}
               </button>
               <button
                 onClick={handleDismissAutoSuggest}
                 className="p-1 laptop:p-1.5 hover:bg-primary-100 dark:hover:bg-primary-900/40 rounded transition-colors min-w-[32px] laptop:min-w-[36px] min-h-[32px] laptop:min-h-[36px] flex items-center justify-center"
-                aria-label="Fermer"
+                aria-label={t('close')}
               >
                 <X className="w-4 h-4 laptop:w-4.5 laptop:h-4.5 text-primary-600 dark:text-primary-400" />
               </button>
@@ -436,7 +438,7 @@ export default function WorkspaceView({
             value={title}
             onChange={handleTitleChange}
             className="flex-1 text-base laptop:text-xl laptop-lg:text-2xl desktop:text-3xl font-semibold text-neutral-900 dark:text-neutral-100 bg-transparent border-none outline-none focus:outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500 min-w-0 order-1"
-            placeholder="Titre de la note"
+            placeholder={t('noteTitlePlaceholder')}
           />
 
           {/* Groupe de droite avec tous les contrôles */}
@@ -451,7 +453,7 @@ export default function WorkspaceView({
                   ? 'bg-primary-600 text-white'
                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
-              title="Enregistrer une note vocale avec transcription"
+              title={t('recordVoiceNote')}
             >
               <Mic className="w-4 h-4" />
             </button>
@@ -463,10 +465,10 @@ export default function WorkspaceView({
               }}
               disabled={!content.trim()}
               className="flex items-center justify-center gap-1 px-2 laptop:px-2.5 laptop-lg:px-3 py-1.5 laptop:py-2 bg-primary-500 text-white hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs laptop:text-sm font-medium min-h-touch flex-shrink-0"
-              title="Générer un résumé avec l'IA"
+              title={t('generateAISummary')}
             >
               <Sparkles className="w-4 h-4" />
-              <span className="hidden laptop-lg:inline">Résumé</span>
+              <span className="hidden laptop-lg:inline">{t('summary')}</span>
             </button>
 
             <button
@@ -478,11 +480,11 @@ export default function WorkspaceView({
                   ? 'bg-primary-600 text-white'
                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
-              title="Ouvrir l'Assistant IA"
-              aria-label="Assistant IA"
+              title={t('openAIAssistant')}
+              aria-label={t('aiAssistant')}
             >
               <Bot className="w-4 h-4" />
-              <span className="hidden laptop-lg:inline">Assistant IA</span>
+              <span className="hidden laptop-lg:inline">{t('aiAssistant')}</span>
             </button>
 
             {/* Boutons de mode de visualisation - Toujours visibles */}
@@ -496,7 +498,7 @@ export default function WorkspaceView({
                     ? 'bg-white dark:bg-neutral-700 text-primary shadow-sm'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
                 }`}
-                title="Mode édition"
+                title={t('editMode')}
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -509,7 +511,7 @@ export default function WorkspaceView({
                     ? 'bg-white dark:bg-neutral-700 text-primary shadow-sm'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
                 }`}
-                title="Mode split"
+                title={t('splitMode')}
               >
                 <Columns2 className="w-4 h-4" />
               </button>
@@ -522,7 +524,7 @@ export default function WorkspaceView({
                     ? 'bg-white dark:bg-neutral-700 text-primary shadow-sm'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
                 }`}
-                title="Mode prévisualisation"
+                title={t('previewMode')}
               >
                 <Eye className="w-4 h-4" />
               </button>

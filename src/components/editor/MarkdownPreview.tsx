@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 import WaveformPlayer from '@/components/ui/WaveformPlayer';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { LocalStorage } from '@/lib/localStorage';
 import 'katex/dist/katex.min.css';
 
@@ -19,6 +20,7 @@ interface MarkdownPreviewProps {
 
 // Composant lecteur audio autonome
 const AudioPlayer = ({ attachmentId }: { attachmentId: string }) => {
+  const { t } = useLanguage();
   const [blob, setBlob] = useState<Blob | null>(null);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ const AudioPlayer = ({ attachmentId }: { attachmentId: string }) => {
   }, [attachmentId]);
 
   if (!blob) {
-    return <div className="text-xs text-gray-500 italic my-2">Chargement du mémo vocal...</div>;
+    return <div className="text-xs text-gray-500 italic my-2">{t('loadingVoiceMemo')}</div>;
   }
 
   return <WaveformPlayer blob={blob} />;
@@ -205,6 +207,7 @@ const MarkdownTd = ({ children, ...props }: React.TdHTMLAttributes<HTMLTableCell
 );
 
 export default function MarkdownPreview({ content, onWikiLinkClick }: MarkdownPreviewProps) {
+  const { t } = useLanguage();
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Rendu des diagrammes Mermaid après le rendu du Markdown (lazy-loaded)
@@ -251,7 +254,7 @@ export default function MarkdownPreview({ content, onWikiLinkClick }: MarkdownPr
             parent.insertAdjacentHTML('beforeend', svg);
           } catch (error) {
             console.error('Erreur rendu Mermaid:', error);
-            element.textContent = `Erreur de rendu du diagramme: ${error}`;
+            element.textContent = t('mermaidRenderError', { error: String(error) });
           }
         }
       }

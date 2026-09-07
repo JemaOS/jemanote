@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { aiService, type SummaryHistoryEntry } from '@/services/ai/mistralService';
 
 interface AISummaryModalProps {
@@ -38,6 +39,7 @@ export default function AISummaryModal({
   onApply,
   onCreateNote,
 }: AISummaryModalProps) {
+  const { t, locale } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('generate');
   const [summaryType, setSummaryType] = useState<SummaryType>('detailed');
   const [applyMode, setApplyMode] = useState<ApplyMode>('prepend');
@@ -60,7 +62,7 @@ export default function AISummaryModal({
 
   const generateSummary = async () => {
     if (!aiService.isConfigured()) {
-      setError('Service IA non disponible');
+      setError(t('aiServiceUnavailable'));
       return;
     }
 
@@ -79,14 +81,14 @@ export default function AISummaryModal({
       await loadHistory();
     } catch (err) {
       if (err instanceof Error) {
-        if (err.message === 'Génération annulée') {
-          setError("Génération annulée par l'utilisateur.");
+        if (err.message === t('generationCancelled')) {
+          setError(t('generationCancelledByUser'));
         } else {
           // Afficher le message d'erreur spécifique du service
           setError(err.message);
         }
       } else {
-        setError("Une erreur inattendue s'est produite lors de la génération du résumé.");
+        setError(t('unexpectedSummaryError'));
       }
       setProgress(0);
     } finally {
@@ -119,7 +121,7 @@ export default function AISummaryModal({
 
   const handleCreateNewNote = () => {
     if (summary && onCreateNote) {
-      const newTitle = `Résumé - ${noteTitle || 'Sans titre'}`;
+      const newTitle = t('summaryTitlePrefix', { title: noteTitle || t('untitled') });
       onCreateNote(newTitle, summary);
       onClose();
     }
@@ -140,30 +142,30 @@ export default function AISummaryModal({
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) {
-      return "À l'instant";
+      return t('justNow');
     }
     if (diffMins < 60) {
-      return `Il y a ${diffMins} min`;
+      return t('minutesAgo', { count: diffMins });
     }
     if (diffHours < 24) {
-      return `Il y a ${diffHours}h`;
+      return t('hoursAgo', { count: diffHours });
     }
     if (diffDays < 7) {
-      return `Il y a ${diffDays}j`;
+      return t('daysAgo', { count: diffDays });
     }
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
   };
 
   const summaryTypeLabels = {
-    short: 'Court (2-3 phrases)',
-    detailed: 'Détaillé (paragraphe)',
-    bullets: 'Points clés (bullets)',
+    short: t('shortType'),
+    detailed: t('detailedType'),
+    bullets: t('bulletsType'),
   };
 
   const applyModeLabels = {
-    replace: 'Remplacer le contenu',
-    prepend: 'Ajouter au début',
-    append: 'Ajouter à la fin',
+    replace: t('replaceContent'),
+    prepend: t('prependContent'),
+    append: t('appendContent'),
   };
 
   return (
@@ -174,7 +176,7 @@ export default function AISummaryModal({
           <div className="flex items-center gap-3">
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
             <h2 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Résumé Automatique IA
+              {t('aiAutoSummary')}
             </h2>
           </div>
           <button
@@ -198,7 +200,7 @@ export default function AISummaryModal({
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            <span className="hidden sm:inline">Générer</span>
+            <span className="hidden sm:inline">{t('generate')}</span>
           </button>
           <button
             onClick={() => {
@@ -211,7 +213,7 @@ export default function AISummaryModal({
             }`}
           >
             <History className="w-4 h-4" />
-            <span className="hidden sm:inline">Historique</span>
+            <span className="hidden sm:inline">{t('history')}</span>
             {history.length > 0 && (
               <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full">
                 {history.length}
@@ -227,7 +229,7 @@ export default function AISummaryModal({
               {/* Type de résumé */}
               <div>
                 <p className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                  Type de résumé
+                  {t('summaryType')}
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {(Object.keys(summaryTypeLabels) as SummaryType[]).map(type => (
@@ -271,7 +273,7 @@ export default function AISummaryModal({
               {loading && (
                 <div data-testid="ai-loading" className="space-y-2">
                   <div className="flex items-center justify-between text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                    <span>Génération en cours...</span>
+                    <span>{t('generatingInProgress')}</span>
                     <span>{progress}%</span>
                   </div>
                   <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
@@ -290,7 +292,7 @@ export default function AISummaryModal({
                     htmlFor="apply-mode-group"
                     className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                   >
-                    Mode d'application
+                    {t('applyMode')}
                   </label>
                   <div className="space-y-2">
                     {(Object.keys(applyModeLabels) as ApplyMode[]).map(mode => (
@@ -329,7 +331,7 @@ export default function AISummaryModal({
               {summary && !loading && (
                 <div>
                   <p className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                    Résumé généré
+                    {t('generatedSummary')}
                   </p>
                   <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700">
                     <p className="text-xs sm:text-sm text-neutral-700 dark:text-white whitespace-pre-wrap">
@@ -355,10 +357,10 @@ export default function AISummaryModal({
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <History className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mb-3" />
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Aucun résumé dans l'historique
+                    {t('noSummariesInHistory')}
                   </p>
                   <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
-                    Les résumés générés apparaîtront ici
+                    {t('summariesWillAppear')}
                   </p>
                 </div>
               ) : (
@@ -371,7 +373,7 @@ export default function AISummaryModal({
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                            {item.noteTitle || 'Sans titre'}
+                            {item.noteTitle || t('untitled')}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded">
@@ -388,7 +390,7 @@ export default function AISummaryModal({
                           }}
                           className="px-2 py-1 text-xs bg-primary-500 text-white hover:bg-primary-600 rounded transition-colors opacity-0 group-hover:opacity-100"
                         >
-                          Utiliser
+                          {t('use')}
                         </button>
                       </div>
                       <p className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-3">
@@ -408,7 +410,7 @@ export default function AISummaryModal({
             onClick={onClose}
             className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
           >
-            Fermer
+            {t('close')}
           </button>
 
           {activeTab === 'generate' && (
@@ -418,24 +420,24 @@ export default function AISummaryModal({
                   <button
                     onClick={handleCopy}
                     className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
-                    title="Copier le résumé"
+                    title={t('copySummary')}
                   >
                     {copied ? (
                       <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                     ) : (
                       <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
                     )}
-                    <span className="hidden sm:inline">{copied ? 'Copié !' : 'Copier'}</span>
+                    <span className="hidden sm:inline">{copied ? t('copied') : t('copy')}</span>
                   </button>
 
                   {onCreateNote && (
                     <button
                       onClick={handleCreateNewNote}
                       className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
-                      title="Créer une nouvelle note avec ce résumé"
+                      title={t('createNoteWithSummary')}
                     >
                       <FilePlus className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Nouvelle note</span>
+                      <span className="hidden sm:inline">{t('newNote')}</span>
                     </button>
                   )}
 
@@ -444,7 +446,7 @@ export default function AISummaryModal({
                     className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-primary-500 text-white hover:bg-primary-600 rounded-lg transition-colors font-medium"
                   >
                     <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span>Appliquer</span>
+                    <span>{t('apply')}</span>
                   </button>
                 </>
               )}
@@ -455,7 +457,7 @@ export default function AISummaryModal({
                   className="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-red-500 text-white hover:bg-red-600 rounded-lg transition-colors font-medium"
                 >
                   <XCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Annuler</span>
+                  <span>{t('cancel')}</span>
                 </button>
               ) : (
                 <button
@@ -464,7 +466,7 @@ export default function AISummaryModal({
                   className="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-primary-500 text-white hover:bg-primary-600 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>{summary && !loading ? 'Régénérer' : 'Générer'}</span>
+                  <span>{summary && !loading ? t('regenerate') : t('generate')}</span>
                 </button>
               )}
             </div>

@@ -2,10 +2,11 @@
 // Distributed under the license specified in the root directory of this project.
 
 import { format, isSameDay, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { enUS, fr } from 'date-fns/locale';
 import { File, Clock, Plus } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Note } from '@/types';
 
 import DateFilter from './DateFilter';
@@ -16,6 +17,8 @@ interface TimelineViewProps {
 }
 
 export default function TimelineView({ notes, onOpenNote }: TimelineViewProps) {
+  const { t, lang } = useLanguage();
+  const dateLocale = lang === 'fr' ? fr : enUS;
   const [sortBy, setSortBy] = useState<'updated' | 'created'>('updated');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
@@ -64,7 +67,7 @@ export default function TimelineView({ notes, onOpenNote }: TimelineViewProps) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-3">
             <DateFilter selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-            {!selectedDate && 'Chronologie des notes'}
+            {!selectedDate && t('notesTimeline')}
           </h2>
 
           <div className="flex items-center bg-white dark:bg-neutral-800 rounded-lg p-1 border border-neutral-200 dark:border-neutral-700 shadow-sm">
@@ -79,7 +82,7 @@ export default function TimelineView({ notes, onOpenNote }: TimelineViewProps) {
               }`}
             >
               <Clock className="h-4 w-4" />
-              Modifié
+              {t('modified')}
             </button>
             <button
               onClick={() => {
@@ -92,7 +95,7 @@ export default function TimelineView({ notes, onOpenNote }: TimelineViewProps) {
               }`}
             >
               <Plus className="h-4 w-4" />
-              Créé
+              {t('created')}
             </button>
           </div>
         </div>
@@ -104,7 +107,7 @@ export default function TimelineView({ notes, onOpenNote }: TimelineViewProps) {
               <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary-500 border-4 border-white dark:border-neutral-900" />
 
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 capitalize">
-                {format(group.date, 'EEEE d MMMM yyyy', { locale: fr })}
+                {format(group.date, 'EEEE d MMMM yyyy', { locale: dateLocale })}
               </h3>
 
               <div className="space-y-3">
@@ -132,16 +135,16 @@ export default function TimelineView({ notes, onOpenNote }: TimelineViewProps) {
                           {note.title}
                         </h4>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">
-                          {note.content || 'Aucun contenu'}
+                          {note.content || t('noContent')}
                         </p>
                         <div className="mt-2 text-xs text-neutral-400 dark:text-neutral-500 flex items-center gap-3">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            Modifié: {format(parseISO(note.updated_at), 'HH:mm')}
+                            {t('modifiedLabel', { time: format(parseISO(note.updated_at), 'HH:mm') })}
                           </span>
                           <span className="flex items-center gap-1">
                             <Plus className="h-3 w-3" />
-                            Créé: {format(parseISO(note.created_at), 'dd/MM/yyyy')}
+                            {t('createdLabel', { date: format(parseISO(note.created_at), 'dd/MM/yyyy') })}
                           </span>
                         </div>
                       </div>
@@ -154,9 +157,7 @@ export default function TimelineView({ notes, onOpenNote }: TimelineViewProps) {
 
           {filteredNotes.length === 0 && (
             <div className="pl-8 text-neutral-500 dark:text-neutral-400 italic">
-              {selectedDate
-                ? 'Aucune note trouvée pour cette date.'
-                : "Aucune note dans l'historique."}
+              {selectedDate ? t('noNotesForDate') : t('noNotesInHistory')}
             </div>
           )}
         </div>

@@ -4,6 +4,8 @@
 import { Search, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+import { TranslateFn } from '@/i18n/translations';
 import { Note } from '@/types';
 
 interface SearchViewProps {
@@ -15,9 +17,9 @@ interface SearchViewProps {
 }
 
 // Helper function to get result count text
-function getResultCountText(count: number): string {
+function getResultCountText(count: number, t: TranslateFn): string {
   const suffix = count > 1 ? 's' : '';
-  return `${count} résultat${suffix} trouvé${suffix}`;
+  return t('resultsFound', { count, suffix });
 }
 
 export default function SearchView({
@@ -27,6 +29,7 @@ export default function SearchView({
   onSearchQueryChange,
   onSelectNote,
 }: SearchViewProps) {
+  const { t, locale } = useLanguage();
   // Use controlled query from props if provided, otherwise use local state
   const [localQuery, setLocalQuery] = useState('');
   const query = searchQuery !== undefined && onSearchQueryChange ? searchQuery : localQuery;
@@ -47,7 +50,7 @@ export default function SearchView({
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h2 className="text-title font-bold text-neutral-900 dark:text-neutral-100 mb-4">
-            Recherche
+            {t('searchTitle')}
           </h2>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-neutral-500 dark:text-neutral-400" />
@@ -57,7 +60,7 @@ export default function SearchView({
               onChange={e => {
                 setQuery(e.target.value);
               }}
-              placeholder="Rechercher dans toutes vos notes..."
+              placeholder={t('searchAllNotesPlaceholder')}
               className="w-full h-16 pl-14 pr-12 text-body-large border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
               autoFocus
             />
@@ -80,7 +83,7 @@ export default function SearchView({
               return (
                 <>
                   <div className="text-body-small text-neutral-700 dark:text-neutral-300 mb-4">
-                    {getResultCountText(filteredNotes.length)}
+                    {getResultCountText(filteredNotes.length, t)}
                   </div>
                   {filteredNotes.map(note => (
                     <button
@@ -93,10 +96,10 @@ export default function SearchView({
                         {note.title}
                       </h3>
                       <p className="text-body text-neutral-700 dark:text-neutral-300 line-clamp-3">
-                        {note.content || 'Aucun contenu'}
+                        {note.content || t('noContent')}
                       </p>
                       <div className="mt-3 text-body-small text-neutral-500 dark:text-neutral-400">
-                        Modifié le {new Date(note.updated_at).toLocaleDateString('fr-FR')}
+                        {t('modifiedOn', { date: new Date(note.updated_at).toLocaleDateString(locale) })}
                       </div>
                     </button>
                   ))}
@@ -107,15 +110,14 @@ export default function SearchView({
               return (
                 <div className="text-center py-12">
                   <p className="text-body text-neutral-500 dark:text-neutral-400">
-                    Aucun résultat trouvé pour "{query}"
-                  </p>
+</p>
                 </div>
               );
             }
             return (
               <div className="text-center py-12">
                 <p className="text-body text-neutral-500 dark:text-neutral-400">
-                  Commencez à taper pour rechercher dans vos notes
+                  {t('startTypingToSearch')}
                 </p>
               </div>
             );
