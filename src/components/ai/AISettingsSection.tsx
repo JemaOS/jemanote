@@ -4,9 +4,11 @@
 import { Sparkles, Check, Server, Loader2, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { aiService } from '@/services/ai/mistralService';
 
 export default function AISettingsSection() {
+  const { t } = useLanguage();
   const [cacheStats, setCacheStats] = useState({
     cacheSize: 0,
     maxCacheSize: 100,
@@ -39,16 +41,14 @@ export default function AISettingsSection() {
       setApiStatus('unavailable');
       if (error instanceof Error) {
         if (error.message.includes('401')) {
-          setApiError(
-            'La clé API Mistral est invalide ou expirée. Le service IA est temporairement indisponible.'
-          );
+          setApiError(t('mistralKeyInvalidUnavailable'));
         } else if (error.message.includes('Network')) {
-          setApiError("Impossible de contacter l'API Mistral. Vérifiez votre connexion internet.");
+          setApiError(t('cannotReachMistral'));
         } else {
-          setApiError(`Service IA indisponible : ${error.message}`);
+          setApiError(t('aiServiceUnavailableWithError', { error: error.message }));
         }
       } else {
-        setApiError('Le service IA rencontre un problème de configuration.');
+        setApiError(t('aiServiceConfigProblem'));
       }
     }
   };
@@ -87,7 +87,7 @@ export default function AISettingsSection() {
       <div className="flex items-center gap-3 mb-4">
         <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary-500" />
         <h3 className="text-sm sm:text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
-          Assistant IA (Mistral)
+          {t('aiAssistantMistral')}
         </h3>
       </div>
 
@@ -99,7 +99,7 @@ export default function AISettingsSection() {
               <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5 animate-spin" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">
-                  Vérification de la connexion à l'API Mistral...
+                  {t('checkingMistralConnection')}
                 </p>
               </div>
             </div>
@@ -114,12 +114,11 @@ export default function AISettingsSection() {
                 <div className="flex items-center gap-2 mb-2">
                   <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                   <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                    Service IA opérationnel
+                    {t('aiServiceOperational')}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-green-600 dark:text-green-400">
-                  L'assistant IA est configuré et connecté. Toutes les fonctionnalités sont
-                  disponibles.
+                  {t('aiServiceConnectedDesc')}
                 </p>
               </div>
             </div>
@@ -133,7 +132,7 @@ export default function AISettingsSection() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
-                    Service IA temporairement indisponible
+                    {t('aiServiceTemporarilyUnavailable')}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-orange-600 dark:text-orange-400 mb-3">
@@ -143,7 +142,7 @@ export default function AISettingsSection() {
                   onClick={handleRetryConnection}
                   className="px-3 py-1.5 text-xs bg-orange-600 text-white hover:bg-orange-700 rounded transition-colors"
                 >
-                  Réessayer la connexion
+                  {t('retryConnection')}
                 </button>
               </div>
             </div>
@@ -153,13 +152,13 @@ export default function AISettingsSection() {
         {/* Cache */}
         <div className="p-3 bg-neutral-100 dark:bg-neutral-900 rounded-md space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-700 dark:text-neutral-300">Réponses en cache</span>
+            <span className="text-neutral-700 dark:text-neutral-300">{t('cachedResponses')}</span>
             <span className="font-medium text-neutral-900 dark:text-neutral-100">
               {cacheStats.cacheSize} / {cacheStats.maxCacheSize}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-700 dark:text-neutral-300">Historique des résumés</span>
+            <span className="text-neutral-700 dark:text-neutral-300">{t('summaryHistory')}</span>
             <span className="font-medium text-neutral-900 dark:text-neutral-100">
               {cacheStats.historySize} / {cacheStats.maxHistorySize}
             </span>
@@ -171,7 +170,7 @@ export default function AISettingsSection() {
               className="flex-1 px-3 py-2 text-xs sm:text-sm border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
             >
               {clearing && <Loader2 className="w-3 h-3 animate-spin" />}
-              Vider le cache
+              {t('clearCache')}
             </button>
             <button
               onClick={handleClearHistory}
@@ -179,43 +178,43 @@ export default function AISettingsSection() {
               className="flex-1 px-3 py-2 text-xs sm:text-sm border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
             >
               {clearing && <Loader2 className="w-3 h-3 animate-spin" />}
-              Vider l'historique
+              {t('clearHistory')}
             </button>
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Les réponses sont mises en cache 24h pour améliorer les performances
+            {t('cacheInfo')}
           </p>
         </div>
 
         {/* Fonctionnalités disponibles */}
         <div className="p-3 sm:p-4 bg-primary-50 dark:bg-primary-900/20 rounded-md">
           <p className="text-xs sm:text-sm font-medium text-primary-900 dark:text-neutral-100 mb-2">
-            Fonctionnalités IA disponibles:
+            {t('availableAIFeatures')}
           </p>
           <ul className="text-xs sm:text-sm text-primary-800 dark:text-neutral-200 space-y-1">
             <li className="flex items-start gap-2">
               <span className="text-primary-500 dark:text-primary-400">•</span>
-              <span>Résumés automatiques (court, détaillé, bullets)</span>
+              <span>{t('featureAutoSummaries')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary-500 dark:text-primary-400">•</span>
-              <span>Historique des résumés avec réutilisation</span>
+              <span>{t('featureSummaryHistory')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary-500 dark:text-primary-400">•</span>
-              <span>Auto-suggestion pour notes longues ({'>'}500 caractères)</span>
+              <span>{t('featureAutoSuggest')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary-500 dark:text-primary-400">•</span>
-              <span>Génération de tags intelligents</span>
+              <span>{t('featureTagGeneration')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary-500 dark:text-primary-400">•</span>
-              <span>Rédaction assistée (continuer, améliorer, traduire)</span>
+              <span>{t('featureWritingAssistance')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary-500 dark:text-primary-400">•</span>
-              <span>Brainstorming et génération d'idées</span>
+              <span>{t('featureBrainstorming')}</span>
             </li>
           </ul>
         </div>
@@ -223,9 +222,7 @@ export default function AISettingsSection() {
         {/* Note de confidentialité */}
         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
           <p className="text-xs text-blue-700 dark:text-blue-300">
-            <strong>Confidentialité:</strong> Vos notes sont envoyées à Mistral AI uniquement lors
-            de l'utilisation des fonctionnalités IA. Elles ne sont pas stockées par Mistral et sont
-            traitées de manière confidentielle.
+            <strong>{t('privacy')}</strong> {t('privacyNote')}
           </p>
         </div>
       </div>

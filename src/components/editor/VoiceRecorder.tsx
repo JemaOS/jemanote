@@ -4,6 +4,8 @@
 import { Square, Play, Pause, Check } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 interface VoiceRecorderProps {
   readonly onTranscriptChange: (transcript: string) => void;
   readonly initialTranscript?: string;
@@ -15,6 +17,7 @@ export default function VoiceRecorder({
   initialTranscript = '',
   onSave,
 }: VoiceRecorderProps) {
+  const { t, lang } = useLanguage();
   const [transcript, setTranscript] = useState(initialTranscript);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(true);
@@ -93,7 +96,7 @@ export default function VoiceRecorder({
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'fr-FR';
+    recognition.lang = lang === 'fr' ? 'fr-FR' : 'en-US';
 
     recognition.onresult = (event: any) => {
       let interimText = '';
@@ -139,7 +142,7 @@ export default function VoiceRecorder({
     };
 
     recognitionRef.current = recognition;
-  }, [transcript, onTranscriptChange]);
+  }, [transcript, onTranscriptChange, lang]);
 
   const startRecording = async () => {
     try {
@@ -213,7 +216,7 @@ export default function VoiceRecorder({
 
         if (blob.size === 0) {
           console.error('ERREUR: Le blob audio est vide! Aucune donnée enregistrée.');
-          alert('Erreur: Aucun audio enregistré. Vérifiez que votre microphone fonctionne.');
+          alert(t('noAudioRecorded'));
           return;
         }
 
@@ -255,7 +258,7 @@ export default function VoiceRecorder({
       visualizeRecording();
     } catch (error) {
       console.error('Erreur accès microphone:', error);
-      alert("Impossible d'accéder au microphone. Vérifiez les permissions.");
+      alert(t("micAccessError"));
       setIsSupported(false);
     }
   };
@@ -483,10 +486,7 @@ export default function VoiceRecorder({
   if (!isSupported) {
     return (
       <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-          La reconnaissance vocale n'est pas supportée. Veuillez utiliser Chrome, Edge ou Safari et
-          autoriser le microphone.
-        </p>
+        <p className="text-sm text-yellow-800 dark:text-yellow-200">{t('speechNotSupported')}</p>
       </div>
     );
   }
@@ -512,7 +512,7 @@ export default function VoiceRecorder({
           <div className="flex-1 mx-0 sm:mx-4 h-12 flex items-center gap-0.5 bg-white dark:bg-neutral-900 rounded-lg px-2 w-full">
             {recordingWaveform.length === 0 ? (
               <div className="flex-1 text-center text-sm text-neutral-400">
-                Parlez dans le micro...
+                {t('speakIntoMic')}
               </div>
             ) : (
               recordingWaveform.map((value, i) => (
@@ -531,7 +531,7 @@ export default function VoiceRecorder({
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-lg hover:shadow-xl text-sm font-semibold whitespace-nowrap"
             >
               <Square className="h-4 w-4 fill-white" />
-              <span>Arrêter</span>
+              <span>{t('stop')}</span>
             </button>
           </div>
         </div>
@@ -541,7 +541,7 @@ export default function VoiceRecorder({
       {(getDisplayTranscript(transcript) || interimTranscript) && (
         <div className="p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl">
           <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 mb-3 uppercase tracking-wide">
-            Transcription
+            {t('transcription')}
           </h3>
           <div className="text-base text-neutral-900 dark:text-neutral-100 leading-relaxed">
             {getDisplayTranscript(transcript)}
@@ -560,7 +560,7 @@ export default function VoiceRecorder({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">
-                Mémo vocal
+                {t('voiceMemo')}
               </h3>
               <span className="text-xs text-neutral-400">
                 ({(audioBlob.size / 1024).toFixed(1)} KB)
@@ -694,7 +694,7 @@ export default function VoiceRecorder({
                 <button
                   onClick={pauseAudio}
                   className="flex items-center justify-center w-14 h-14 bg-primary-500 text-white rounded-full hover:bg-primary-600 transition-all shadow-lg hover:shadow-xl hover:scale-105"
-                  title="Pause"
+                  title={t('pause')}
                 >
                   <Pause className="h-6 w-6 fill-white" />
                 </button>
@@ -702,7 +702,7 @@ export default function VoiceRecorder({
                 <button
                   onClick={playAudio}
                   className="flex items-center justify-center w-14 h-14 bg-primary-500 text-white rounded-full hover:bg-primary-600 transition-all shadow-lg hover:shadow-xl hover:scale-105"
-                  title="Lire"
+                  title={t('play')}
                 >
                   <Play className="h-6 w-6 ml-0.5 fill-white" />
                 </button>
@@ -717,7 +717,7 @@ export default function VoiceRecorder({
                 className="w-full py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" />
-                Enregistrer le mémo
+                {t('saveMemo')}
               </button>
             )}
           </div>

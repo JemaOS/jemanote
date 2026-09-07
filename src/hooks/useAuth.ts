@@ -4,6 +4,7 @@
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 
+import { translate } from '@/i18n/translations';
 import { supabase } from '@/lib/supabase';
 
 export function useAuth() {
@@ -52,35 +53,35 @@ export function useAuth() {
 
     // Messages d'erreur Supabase traduits en français
     if (errorMessage.includes('invalid login credentials')) {
-      return 'Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.';
+      return translate('authInvalidCredentials');
     }
     if (errorMessage.includes('email not confirmed')) {
-      return "Votre email n'a pas été confirmé. Veuillez vérifier votre boîte de réception.";
+      return translate('authEmailNotConfirmed');
     }
     if (errorMessage.includes('user not found')) {
-      return 'Aucun compte trouvé avec cet email.';
+      return translate('authUserNotFound');
     }
     if (
       errorMessage.includes('email already registered') ||
       errorMessage.includes('user already registered')
     ) {
-      return 'Un compte existe déjà avec cet email.';
+      return translate('authEmailAlreadyRegistered');
     }
     if (errorMessage.includes('password')) {
-      return 'Le mot de passe doit contenir au moins 6 caractères.';
+      return translate('authPasswordTooShort');
     }
     if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      return 'Problème de connexion. Veuillez vérifier votre connexion internet.';
+      return translate('authNetworkError');
     }
     if (errorMessage.includes('rate limit')) {
-      return 'Trop de tentatives. Veuillez réessayer plus tard.';
+      return translate('authRateLimit');
     }
     if (errorMessage.includes('invalid email')) {
-      return "L'adresse email n'est pas valide.";
+      return translate('authInvalidEmail');
     }
 
     // Message générique par défaut
-    return 'Une erreur est survenue. Veuillez réessayer.';
+    return translate('authGenericError');
   };
 
   const signUp = async (email: string, password: string) => {

@@ -6,6 +6,7 @@
  * Utilise l'analyse de mots-clés et l'IA Mistral pour suggérer des connexions pertinentes
  */
 
+import { translate } from '@/i18n/translations';
 import type { Note } from '@/types';
 
 import { aiService } from './ai/mistralService';
@@ -173,7 +174,7 @@ class LinkDetectionService {
         suggestions.push({
           targetNoteId: note.id,
           targetNoteTitle: note.title,
-          reason: `Mots-clés communs: ${commonKeywords.slice(0, 5).join(', ')}`,
+          reason: translate('commonKeywords', { keywords: commonKeywords.slice(0, 5).join(', ') }),
           confidence: Math.min(similarity, 100),
           keywords: commonKeywords,
         });

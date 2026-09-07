@@ -3,11 +3,13 @@
 
 import * as Popover from '@radix-ui/react-popover';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { enUS, fr } from 'date-fns/locale';
 import { Calendar as CalendarIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import React from 'react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
+
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DateFilterProps {
   readonly selectedDate: Date | undefined;
@@ -21,6 +23,8 @@ const IconLeftComponent = () => <ChevronLeft className="h-4 w-4" />;
 const IconRightComponent = () => <ChevronRight className="h-4 w-4" />;
 
 export default function DateFilter({ selectedDate, onSelectDate }: DateFilterProps) {
+  const { t, lang } = useLanguage();
+  const dateLocale = lang === 'fr' ? fr : enUS;
   // Custom styling for DayPicker to match the app theme
   const css = `
     .rdp {
@@ -65,12 +69,12 @@ export default function DateFilter({ selectedDate, onSelectDate }: DateFilterPro
                 ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20'
                 : 'text-primary-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
-            title="Filtrer par date"
+            title={t('filterByDate')}
           >
             <CalendarIcon className="h-8 w-8" />
             {selectedDate && (
               <span className="text-lg font-semibold">
-                {format(selectedDate, 'd MMMM yyyy', { locale: fr })}
+                {format(selectedDate, 'd MMMM yyyy', { locale: dateLocale })}
               </span>
             )}
           </button>
@@ -83,7 +87,7 @@ export default function DateFilter({ selectedDate, onSelectDate }: DateFilterPro
           >
             <div className="flex justify-between items-center mb-4 px-2">
               <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                Choisir une date
+                {t('chooseDate')}
               </h3>
               {selectedDate && (
                 <button
@@ -94,7 +98,7 @@ export default function DateFilter({ selectedDate, onSelectDate }: DateFilterPro
                   className="text-xs font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
                   <X className="h-3 w-3" />
-                  Effacer
+                  {t('clear')}
                 </button>
               )}
             </div>
@@ -103,7 +107,7 @@ export default function DateFilter({ selectedDate, onSelectDate }: DateFilterPro
               mode="single"
               selected={selectedDate}
               onSelect={onSelectDate}
-              locale={fr}
+              locale={dateLocale}
               showOutsideDays
               fixedWeeks
               components={{

@@ -4,6 +4,7 @@
 import { ZoomIn, ZoomOut, Maximize2, Plus, Trash2, CheckSquare, Square, X } from 'lucide-react';
 import { useRef, useEffect, useState, useCallback } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { LocalStorage } from '@/lib/localStorage';
 import { Note } from '@/types';
 
@@ -64,6 +65,7 @@ export default function CanvasView({
   deleteNote,
   createNote,
 }: CanvasViewProps) {
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -381,7 +383,7 @@ export default function CanvasView({
 
     if (noteNodes.length > 0 && deleteNote) {
       const confirmed = globalThis.confirm(
-        `Voulez-vous supprimer ${selectedNodes.size} élément(s) du canvas et mettre les ${noteNodes.length} note(s) à la corbeille ?`
+        t('deleteCanvasSelectionConfirm', { count: selectedNodes.size, noteCount: noteNodes.length })
       );
       if (confirmed) {
         // Delete all note nodes from the database
@@ -484,7 +486,7 @@ export default function CanvasView({
     }
 
     // Create a real note first
-    const newNote = await createNote('Nouvelle note', '');
+    const newNote = await createNote(t('newNote'), '');
 
     if (newNote) {
       justCreatedIds.current.add(newNote.id);
@@ -528,9 +530,7 @@ export default function CanvasView({
 
     // If it's a note node, we might want to delete the actual note
     if (node?.type === 'note' && deleteNote) {
-      const shouldDelete = globalThis.confirm(
-        'Voulez-vous supprimer la note originale et la mettre à la corbeille ?'
-      );
+      const shouldDelete = globalThis.confirm(t('deleteCanvasNoteConfirm'));
       if (shouldDelete) {
         await deleteNote(node.id); // This uses the soft delete from useLocalNotes
       }
@@ -561,19 +561,19 @@ export default function CanvasView({
       {(isMultiSelectMode || selectedNodes.size > 1) && (
         <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2">
           <span className="text-sm text-neutral-700 dark:text-neutral-300 px-2">
-            {selectedNodes.size} sélectionné(s)
+            {t('selectedCount', { count: selectedNodes.size })}
           </span>
           <button
             onClick={selectAllNodes}
             className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors"
-            title="Tout sélectionner"
+            title={t('selectAll')}
           >
             <CheckSquare className="h-4 w-4 text-neutral-700 dark:text-neutral-300" />
           </button>
           <button
             onClick={clearSelection}
             className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors"
-            title="Annuler la sélection"
+            title={t('clearSelection')}
           >
             <X className="h-4 w-4 text-neutral-700 dark:text-neutral-300" />
           </button>
@@ -581,7 +581,7 @@ export default function CanvasView({
             <button
               onClick={deleteSelectedNodes}
               className="p-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors"
-              title="Supprimer la sélection"
+              title={t('deleteSelection')}
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -596,7 +596,7 @@ export default function CanvasView({
             handleZoom(0.1);
           }}
           className="p-2.5 sm:p-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors shadow-lg min-w-touch min-h-touch flex items-center justify-center"
-          title="Zoom avant"
+          title={t('zoomIn')}
         >
           <ZoomIn className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
         </button>
@@ -605,14 +605,14 @@ export default function CanvasView({
             handleZoom(-0.1);
           }}
           className="p-2.5 sm:p-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors shadow-lg min-w-touch min-h-touch flex items-center justify-center"
-          title="Zoom arrière"
+          title={t('zoomOut')}
         >
           <ZoomOut className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
         </button>
         <button
           onClick={handleResetView}
           className="p-2.5 sm:p-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors shadow-lg min-w-touch min-h-touch flex items-center justify-center"
-          title="Réinitialiser la vue"
+          title={t('resetView')}
         >
           <Maximize2 className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
         </button>
@@ -634,7 +634,7 @@ export default function CanvasView({
               ? 'bg-primary-500 text-white border-primary-500 hover:bg-primary-600'
               : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700'
           }`}
-          title={isMultiSelectMode ? 'Quitter le mode sélection' : 'Mode sélection multiple'}
+          title={isMultiSelectMode ? t('exitSelectionMode') : t('multiSelectMode')}
         >
           {isMultiSelectMode ? (
             <CheckSquare className="h-5 w-5" />
@@ -645,7 +645,7 @@ export default function CanvasView({
         <button
           onClick={addNoteNode}
           className="p-2.5 sm:p-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors shadow-lg min-w-touch min-h-touch flex items-center justify-center"
-          title="Ajouter une note"
+          title={t('addNote')}
         >
           <Plus className="h-5 w-5" />
         </button>
@@ -662,7 +662,7 @@ export default function CanvasView({
       <div
         ref={canvasRef}
         role="application"
-        aria-label="Zone de dessin"
+        aria-label={t('drawingArea')}
         className="canvas-background h-full w-full cursor-grab active:cursor-grabbing block text-left"
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
@@ -732,7 +732,7 @@ export default function CanvasView({
               <button
                 type="button"
                 key={node.id}
-                aria-label={`Nœud ${node.title || 'sans titre'}`}
+                aria-label={t('nodeAriaLabel', { title: node.title || t('untitledLowercase') })}
                 onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -807,7 +807,7 @@ export default function CanvasView({
                       handleDeleteNode(node.id);
                     }}
                     className="absolute top-2 right-2 p-1.5 bg-white dark:bg-neutral-800 text-red-500 rounded-full shadow-md border border-neutral-200 dark:border-neutral-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all z-50"
-                    title="Supprimer"
+                    title={t('delete')}
                   >
                     <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
@@ -871,13 +871,13 @@ export default function CanvasView({
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
           <div className="text-center">
             <h2 className="text-lg sm:text-xl md:text-2xl text-neutral-400 dark:text-neutral-500 mb-2 font-semibold">
-              Canvas vide
+              {t('emptyCanvas')}
             </h2>
             <p className="text-sm sm:text-base text-neutral-400 dark:text-neutral-500 mb-1">
-              Cliquez sur le bouton + pour ajouter des éléments
+              {t('emptyCanvasHint')}
             </p>
             <p className="text-xs sm:text-sm text-neutral-400 dark:text-neutral-500">
-              Glissez pour déplacer la vue, utilisez les contrôles pour zoomer
+              {t('emptyCanvasPanHint')}
             </p>
           </div>
         </div>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 // SubscriptionGuard v3 (2026-09-04)
 // ---------------------------------
 // Fix "perte de licence après 24 h" : le token JWT (cookie
@@ -679,6 +681,7 @@ function UpgradeScreen({
   reconnecting?: boolean;
   reconnectError?: boolean;
 }) {
+  const { t } = useLanguage();
   const reconnectUrl = `${AUTH_URL}?return_to=${encodeURIComponent(window.location.href)}`;
   return (
     <div
@@ -740,7 +743,7 @@ function UpgradeScreen({
               lineHeight: 1.6,
             }}
           >
-            Cette application nécessite un abonnement JemaOS Pro.
+            {t('subscriptionRequired')}
           </p>
           <div
             style={{
@@ -766,7 +769,7 @@ function UpgradeScreen({
                 boxShadow: '0 10px 25px -5px rgba(79, 70, 229, 0.45)',
               }}
             >
-              Passer à Pro
+              {t('upgradeToPro')}
             </a>
             {IS_SSO_HOST ? (
               // Sur l'hôte SSO uniquement : /auth est sa propre page de
@@ -785,7 +788,7 @@ function UpgradeScreen({
                   border: '1px solid rgba(79, 70, 229, 0.4)',
                 }}
               >
-                Se reconnecter
+                {t('reconnect')}
               </a>
             ) : (
               // Dans les PWA : reconnexion INTERNE, jamais de lien vers une
@@ -807,12 +810,12 @@ function UpgradeScreen({
                   opacity: reconnecting ? 0.6 : 1,
                 }}
               >
-                {reconnecting ? 'Reconnexion…' : 'Se reconnecter'}
+                {reconnecting ? t('reconnecting') : t('reconnect')}
               </button>
             )}
             {reconnectError && !reconnecting && !IS_SSO_HOST && (
               <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: 0 }}>
-                La reconnexion a échoué. Réessayez dans un instant.
+                {t('reconnectFailed')}
               </p>
             )}
           </div>
@@ -834,6 +837,7 @@ function UpgradeScreen({
 }
 
 function LoadingScreen() {
+  const { t } = useLanguage();
   return (
     <div
       style={{
@@ -846,7 +850,7 @@ function LoadingScreen() {
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
-      <div style={{ fontSize: '1.2rem' }}>Chargement…</div>
+      <div style={{ fontSize: '1.2rem' }}>{t('guardLoading')}</div>
     </div>
   );
 }
@@ -857,6 +861,7 @@ function LoadingScreen() {
 // Se reconnecter" s'affiche, avec une reconnexion INTERNE (jamais de lien
 // vers une autre app).
 function ReconnectScreen({ appName }: { appName: string }) {
+  const { t } = useLanguage();
   const [failed, setFailed] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [reconnectError, setReconnectError] = useState(false);
@@ -951,7 +956,7 @@ function ReconnectScreen({ appName }: { appName: string }) {
             color: '#0f172a',
           }}
         >
-          Reconnexion en cours…
+          {t('reconnectingInProgress')}
         </h1>
         <p
           style={{
@@ -961,7 +966,7 @@ function ReconnectScreen({ appName }: { appName: string }) {
             lineHeight: 1.6,
           }}
         >
-          Vérification de votre session JemaOS. Vous allez être redirigé automatiquement.
+          {t('verifyingSession')}
         </p>
       </div>
     </div>

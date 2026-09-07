@@ -4,12 +4,15 @@
 import { Download, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
 export default function InstallPrompt() {
+  const { t } = useLanguage();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -100,11 +103,10 @@ export default function InstallPrompt() {
 
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm laptop:text-base text-neutral-900 dark:text-neutral-100 mb-1">
-              Installer Jemanote
+              {t('installJemanote')}
             </h3>
             <p className="text-xs laptop:text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-              Installez l'application pour un accès rapide et une expérience optimale, même hors
-              ligne.
+              {t('installDesc')}
             </p>
 
             <div className="flex items-center gap-2">
@@ -112,13 +114,13 @@ export default function InstallPrompt() {
                 onClick={handleInstall}
                 className="flex-1 px-3 laptop:px-4 py-2 bg-primary-500 text-white text-sm laptop:text-base font-semibold rounded-md hover:bg-primary-600 transition-colors"
               >
-                Installer
+                {t('install')}
               </button>
               <button
                 onClick={handleDismiss}
                 className="px-3 laptop:px-4 py-2 text-sm laptop:text-base text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
               >
-                Plus tard
+                {t('later')}
               </button>
             </div>
           </div>
@@ -126,7 +128,7 @@ export default function InstallPrompt() {
           <button
             onClick={handleDismiss}
             className="flex-shrink-0 p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors"
-            aria-label="Fermer"
+            aria-label={t('close')}
           >
             <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
           </button>

@@ -4,6 +4,7 @@
 import { Palette, Type, Cloud, Moon, Sun, Keyboard } from 'lucide-react';
 
 import AISettingsSection from '@/components/ai/AISettingsSection';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface SettingsViewProps {
@@ -12,12 +13,13 @@ interface SettingsViewProps {
 
 export default function SettingsView({ userId }: SettingsViewProps) {
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <div className="h-full bg-surface-bg dark:bg-neutral-900 overflow-auto">
       <div className="max-w-4xl mx-auto p-8">
         <h2 className="text-title font-bold text-neutral-900 dark:text-neutral-100 mb-8">
-          Paramètres
+          {t('settingsTitle')}
         </h2>
 
         <div className="space-y-6">
@@ -25,7 +27,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
             <div className="flex items-center gap-3 mb-4">
               <Palette className="h-6 w-6 text-primary-500" />
               <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
-                Apparence
+                {t('appearance')}
               </h3>
             </div>
             <div className="space-y-4">
@@ -34,7 +36,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                   htmlFor="theme-label"
                   className="block text-body font-medium text-neutral-700 dark:text-neutral-300 mb-3"
                 >
-                  Thème
+                  {t('theme')}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -48,7 +50,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                     }`}
                   >
                     <Sun className="h-5 w-5" />
-                    <span className="font-medium">Clair</span>
+                    <span className="font-medium">{t('light')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -61,7 +63,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                     }`}
                   >
                     <Moon className="h-5 w-5" />
-                    <span className="font-medium">Sombre</span>
+                    <span className="font-medium">{t('dark')}</span>
                   </button>
                 </div>
               </div>
@@ -72,7 +74,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
             <div className="flex items-center gap-3 mb-4">
               <Type className="h-6 w-6 text-primary-500" />
               <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
-                Éditeur
+                {t('editor')}
               </h3>
             </div>
             <div className="space-y-4">
@@ -81,7 +83,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                   htmlFor="lineNumbers"
                   className="text-body text-neutral-700 dark:text-neutral-300"
                 >
-                  Numéros de ligne
+                  {t('lineNumbers')}
                 </label>
                 <input
                   id="lineNumbers"
@@ -95,7 +97,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                   htmlFor="autoSave"
                   className="text-body text-neutral-700 dark:text-neutral-300"
                 >
-                  Sauvegarde automatique
+                  {t('autoSave')}
                 </label>
                 <input
                   id="autoSave"
@@ -109,7 +111,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                   htmlFor="vimMode"
                   className="text-body text-neutral-700 dark:text-neutral-300"
                 >
-                  Mode Vim
+                  {t('vimMode')}
                 </label>
                 <input
                   id="vimMode"
@@ -125,21 +127,21 @@ export default function SettingsView({ userId }: SettingsViewProps) {
             <div className="flex items-center gap-3 mb-4">
               <Keyboard className="h-6 w-6 text-primary-500" />
               <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
-                Raccourcis clavier
+                {t('keyboardShortcuts')}
               </h3>
             </div>
             <div className="space-y-2">
               {[
-                { keys: ['Ctrl', 'K'], description: 'Ouvrir la palette de commandes' },
-                { keys: ['Ctrl', 'N'], description: 'Créer une nouvelle note' },
-                { keys: ['Ctrl', 'S'], description: 'Sauvegarder la note' },
-                { keys: ['Ctrl', 'F'], description: 'Rechercher dans les notes' },
-                { keys: ['Ctrl', 'Shift', 'L'], description: 'Basculer le thème clair/sombre' },
-                { keys: ['Ctrl', 'B'], description: 'Texte en gras' },
-                { keys: ['Ctrl', 'I'], description: 'Texte en italique' },
-                { keys: ['Ctrl', 'Z'], description: 'Annuler' },
-                { keys: ['Ctrl', 'Y'], description: 'Rétablir' },
-                { keys: ['Échap'], description: 'Fermer le panneau actif' },
+                { keys: ['Ctrl', 'K'], description: t('openCommandPalette') },
+                { keys: ['Ctrl', 'N'], description: t('createNewNote') },
+                { keys: ['Ctrl', 'S'], description: t('saveNoteShortcut') },
+                { keys: ['Ctrl', 'F'], description: t('searchInNotes') },
+                { keys: ['Ctrl', 'Shift', 'L'], description: t('toggleThemeShortcut') },
+                { keys: ['Ctrl', 'B'], description: t('boldText') },
+                { keys: ['Ctrl', 'I'], description: t('italicText') },
+                { keys: ['Ctrl', 'Z'], description: t('undo') },
+                { keys: ['Ctrl', 'Y'], description: t('redo') },
+                { keys: [t('escapeKey')], description: t('closeActivePanel') },
               ].map(({ keys, description }) => (
                 <div
                   key={description}
@@ -173,7 +175,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
               <div className="flex items-center gap-3 mb-4">
                 <Cloud className="h-6 w-6 text-primary-500" />
                 <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
-                  Synchronisation Cloud
+                  {t('cloudSync')}
                 </h3>
               </div>
               <div className="space-y-4">
@@ -182,7 +184,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                     htmlFor="syncEnabled"
                     className="text-body text-neutral-700 dark:text-neutral-300"
                   >
-                    Synchronisation activée
+                    {t('syncEnabledLabel')}
                   </label>
                   <input
                     id="syncEnabled"
@@ -196,7 +198,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                     htmlFor="syncInterval"
                     className="block text-body font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                   >
-                    Intervalle de synchronisation (secondes)
+                    {t('syncInterval')}
                   </label>
                   <input
                     id="syncInterval"

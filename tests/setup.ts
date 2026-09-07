@@ -114,6 +114,13 @@ Object.defineProperty(globalThis, 'scrollTo', {
   value: vi.fn(),
 });
 
+// Force the app language to French in tests (default UI language, unchanged behavior)
+Object.defineProperty(navigator, 'language', {
+  writable: true,
+  configurable: true,
+  value: 'fr-FR',
+});
+
 // Mock navigator.onLine
 Object.defineProperty(navigator, 'onLine', {
   writable: true,

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { LocalStorage } from '@/lib/localStorage';
 import { Note, Folder } from '@/types';
 
@@ -71,6 +72,7 @@ function TrashFolderItem({
   readonly onRestore: (e: React.MouseEvent) => void;
   readonly onPermanentlyDelete: (e: React.MouseEvent) => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div
       className={`flex items-center w-full min-h-[40px] gap-1 group px-2 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800 ${isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}
@@ -92,7 +94,7 @@ function TrashFolderItem({
         </span>
         {notesInFolder.length > 0 && (
           <span className="text-xs text-neutral-400 dark:text-neutral-500">
-            ({notesInFolder.length} note{notesInFolder.length > 1 ? 's' : ''})
+            {t('noteCount', { count: notesInFolder.length, suffix: notesInFolder.length > 1 ? 's' : '' })}
           </span>
         )}
       </div>
@@ -100,16 +102,16 @@ function TrashFolderItem({
         <button
           onClick={onRestore}
           className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/30 rounded text-green-600 dark:text-green-400"
-          title="Restaurer le dossier et ses notes"
-          aria-label="Restaurer le dossier et ses notes"
+          title={t('restoreFolderAndNotes')}
+          aria-label={t('restoreFolderAndNotes')}
         >
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={onPermanentlyDelete}
           className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600 dark:text-red-400"
-          title="Supprimer définitivement"
-          aria-label="Supprimer définitivement"
+          title={t('deletePermanently')}
+          aria-label={t('deletePermanently')}
         >
           <Trash className="h-3.5 w-3.5" />
         </button>
@@ -132,6 +134,7 @@ function TrashNoteItem({
   readonly onRestore: (e: React.MouseEvent) => void;
   readonly onPermanentlyDelete: (e: React.MouseEvent) => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div
       className={`flex items-center w-full min-h-[40px] gap-1 group px-2 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800 ${isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}
@@ -156,16 +159,16 @@ function TrashNoteItem({
         <button
           onClick={onRestore}
           className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/30 rounded text-green-600 dark:text-green-400"
-          title="Restaurer"
-          aria-label="Restaurer"
+          title={t('restore')}
+          aria-label={t('restore')}
         >
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={onPermanentlyDelete}
           className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600 dark:text-red-400"
-          title="Supprimer définitivement"
-          aria-label="Supprimer définitivement"
+          title={t('deletePermanently')}
+          aria-label={t('deletePermanently')}
         >
           <Trash className="h-3.5 w-3.5" />
         </button>
@@ -198,13 +201,14 @@ function NoteMultiSelectHeader({
   readonly hasSelectedInView: boolean;
   readonly onDeleteSelected: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="flex items-center gap-1 px-2 py-1.5 border-b border-neutral-200 dark:border-neutral-700 mb-1">
       <button
         onClick={toggleNoteMultiSelectMode}
         className={`p-1 rounded transition-colors ${noteMultiSelectMode ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400' : 'hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400'}`}
-        title={noteMultiSelectMode ? 'Quitter le mode sélection' : 'Mode sélection'}
-        aria-label={noteMultiSelectMode ? 'Quitter le mode sélection' : 'Mode sélection'}
+        title={noteMultiSelectMode ? t('exitSelectionMode') : t('selectionMode')}
+        aria-label={noteMultiSelectMode ? t('exitSelectionMode') : t('selectionMode')}
       >
         {noteMultiSelectMode ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
       </button>
@@ -212,21 +216,21 @@ function NoteMultiSelectHeader({
         <button
           onClick={isAllSelected ? onDeselectAll : onSelectAll}
           className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400"
-          title={isAllSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
-          aria-label={isAllSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+          title={isAllSelected ? t('deselectAll') : t('selectAll')}
+          aria-label={isAllSelected ? t('deselectAll') : t('selectAll')}
         >
           {getSelectionIcon(isAllSelected, isSomeSelected)}
         </button>
       )}
-      <span className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">Notes</span>
+      <span className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">{t('notes')}</span>
       {selectedCount > 0 && hasSelectedInView && (
         <button
           onClick={onDeleteSelected}
           className="ml-auto px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded transition-colors"
-          title="Supprimer la sélection"
-          aria-label="Supprimer la sélection"
+          title={t('deleteSelection')}
+          aria-label={t('deleteSelection')}
         >
-          Supprimer ({selectedCount})
+          {t('deleteWithCount', { count: selectedCount })}
         </button>
       )}
     </div>
@@ -288,6 +292,7 @@ function TrashSection({
   readonly handleRestoreNote: (id: string, e: React.MouseEvent) => void;
   readonly handlePermanentlyDeleteNote: (id: string, e: React.MouseEvent) => void;
 }) {
+  const { t } = useLanguage();
   const totalTrashItems = trashNotes.length + trashFolders.length;
 
   return (
@@ -302,7 +307,7 @@ function TrashSection({
           className={`h-4 w-4 flex-shrink-0 transition-transform ${trashOpen ? 'rotate-90' : ''}`}
         />
         <Trash2 className="h-4 w-4 flex-shrink-0" />
-        <span>Corbeille</span>
+        <span>{t('trash')}</span>
         <span className="ml-auto text-neutral-500 dark:text-neutral-400 text-xs">
           {totalTrashItems}
         </span>
@@ -312,7 +317,7 @@ function TrashSection({
         <div className="ml-4 mt-1 space-y-1">
           {totalTrashItems === 0 ? (
             <p className="text-xs text-neutral-500 dark:text-neutral-400 px-3 py-2">
-              Corbeille vide
+              {t('trashEmpty')}
             </p>
           ) : (
             <>
@@ -327,8 +332,8 @@ function TrashSection({
                     }
                   }}
                   className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400"
-                  title={isAllSelected() ? 'Tout désélectionner' : 'Tout sélectionner'}
-                  aria-label={isAllSelected() ? 'Tout désélectionner' : 'Tout sélectionner'}
+                  title={isAllSelected() ? t('deselectAll') : t('selectAll')}
+                  aria-label={isAllSelected() ? t('deselectAll') : t('selectAll')}
                 >
                   <ThreeStateCheckbox
                     allSelected={isAllSelected()}
@@ -341,18 +346,18 @@ function TrashSection({
                     <button
                       onClick={handleRestoreSelected}
                       className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors"
-                      title="Restaurer la sélection"
-                      aria-label="Restaurer la sélection"
+                      title={t('restoreSelection')}
+                      aria-label={t('restoreSelection')}
                     >
-                      Restaurer ({selectedTrashItems.size})
+                      {t('restoreWithCount', { count: selectedTrashItems.size })}
                     </button>
                     <button
                       onClick={handleDeleteSelected}
                       className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded transition-colors"
-                      title="Supprimer la sélection"
-                      aria-label="Supprimer la sélection"
+                      title={t('deleteSelection')}
+                      aria-label={t('deleteSelection')}
                     >
-                      Supprimer ({selectedTrashItems.size})
+                      {t('deleteWithCount', { count: selectedTrashItems.size })}
                     </button>
                   </>
                 )}
@@ -363,10 +368,10 @@ function TrashSection({
                   style={{ backgroundColor: '#4850d9' }}
                   onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#3a41b0')}
                   onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#4850d9')}
-                  title="Vider la corbeille"
-                  aria-label="Vider la corbeille"
+                  title={t('emptyTrash')}
+                  aria-label={t('emptyTrash')}
                 >
-                  Vider tout
+                  {t('emptyAll')}
                 </button>
               </div>
 
@@ -572,6 +577,7 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
     handleRestoreNote,
     handlePermanentlyDeleteNote,
   } = props;
+  const { t } = useLanguage();
 
   return (
     <div className="w-full h-full bg-neutral-100 dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden">
@@ -582,7 +588,7 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
           className="w-full min-h-[44px] bg-primary-500 text-white rounded-lg hover:bg-primary-600 active:bg-primary-700 transition-colors flex items-center justify-center gap-1.5 xs:gap-2 font-semibold text-sm xs:text-sm sm:text-base py-2 xs:py-2.5 sm:py-2.5 laptop:py-3 laptop-lg:py-3.5"
         >
           <Plus className="h-4 w-4 xs:h-4 xs:w-4 sm:h-4.5 sm:w-4.5 laptop:h-5 laptop:w-5" />
-          <span>Nouvelle note</span>
+          <span>{t('newNote')}</span>
         </button>
       </div>
 
@@ -608,7 +614,7 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                     setNewFolderName('');
                   }
                 }}
-                placeholder="Nom du dossier..."
+                placeholder={t('folderNamePlaceholder')}
                 className="flex-1 text-xs xs:text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-primary-500 rounded px-1.5 xs:px-2 py-0.5 xs:py-1 outline-none focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
@@ -636,7 +642,7 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
               className="w-full flex items-center gap-1.5 xs:gap-2 px-1.5 xs:px-2 sm:px-2 laptop:px-3 py-1 xs:py-1.5 sm:py-1.5 laptop:py-2 text-xs sm:text-xs laptop:text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-md transition-colors"
             >
               <FolderPlus className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-4 sm:w-4 laptop:h-4.5 laptop:w-4.5" />
-              <span>Nouveau dossier</span>
+              <span>{t('newFolder')}</span>
             </button>
           )}
         </div>
@@ -652,8 +658,8 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                   ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                   : 'hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
               }`}
-              title={folderMultiSelectMode ? 'Quitter le mode sélection' : 'Mode sélection'}
-              aria-label={folderMultiSelectMode ? 'Quitter le mode sélection' : 'Mode sélection'}
+              title={folderMultiSelectMode ? t('exitSelectionMode') : t('selectionMode')}
+              aria-label={folderMultiSelectMode ? t('exitSelectionMode') : t('selectionMode')}
             >
               {folderMultiSelectMode ? (
                 <CheckSquare className="h-4 w-4" />
@@ -669,8 +675,8 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                   isAllFoldersSelected() ? deselectAllFolders() : selectAllFolders();
                 }}
                 className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400"
-                title={isAllFoldersSelected() ? 'Tout désélectionner' : 'Tout sélectionner'}
-                aria-label={isAllFoldersSelected() ? 'Tout désélectionner' : 'Tout sélectionner'}
+                title={isAllFoldersSelected() ? t('deselectAll') : t('selectAll')}
+                aria-label={isAllFoldersSelected() ? t('deselectAll') : t('selectAll')}
               >
                 <ThreeStateCheckbox
                   allSelected={isAllFoldersSelected()}
@@ -679,16 +685,16 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
               </button>
             )}
 
-            <h3 className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">Dossiers</h3>
+            <h3 className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">{t('folders')}</h3>
 
             {selectedFolderIds.size > 0 && (
               <button
                 onClick={handleDeleteSelectedFolders}
                 className="ml-auto px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded transition-colors"
-                title="Supprimer les dossiers sélectionnés"
-                aria-label="Supprimer les dossiers sélectionnés"
+                title={t('deleteSelectedFolders')}
+                aria-label={t('deleteSelectedFolders')}
               >
-                Supprimer ({selectedFolderIds.size})
+                {t('deleteWithCount', { count: selectedFolderIds.size })}
               </button>
             )}
           </div>
@@ -703,7 +709,7 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
             <div key={folder.id} className="mb-1.5 xs:mb-2">
               <div
                 role="treeitem"
-                aria-label={`Dossier ${folder.name}`}
+                aria-label={t('folderAriaLabel', { name: folder.name })}
                 aria-expanded={isExpanded}
                 aria-selected={selectedFolderIds.has(folder.id)}
                 tabIndex={0}
@@ -803,8 +809,8 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                           handleCreateNoteInFolder(folder.id);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-0.5 xs:p-1 hover:bg-green-100 dark:hover:bg-green-900/30 rounded text-green-600"
-                        title="Créer une note dans ce dossier"
-                        aria-label="Créer une note dans ce dossier"
+                        title={t('createNoteInFolder')}
+                        aria-label={t('createNoteInFolder')}
                       >
                         <Plus className="h-3 w-3 xs:h-3.5 xs:w-3.5" />
                       </button>
@@ -815,8 +821,8 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                           setEditingFolderName(folder.name);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-0.5 xs:p-1 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded text-blue-600"
-                        title="Renommer le dossier"
-                        aria-label="Renommer le dossier"
+                        title={t('renameFolder')}
+                        aria-label={t('renameFolder')}
                       >
                         <Edit2 className="h-3 w-3 xs:h-3.5 xs:w-3.5" />
                       </button>
@@ -825,8 +831,8 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                           handleDeleteFolder(folder.id, e);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-0.5 xs:p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600"
-                        title="Supprimer le dossier"
-                        aria-label="Supprimer le dossier"
+                        title={t('deleteFolder')}
+                        aria-label={t('deleteFolder')}
                       >
                         <Trash2 className="h-3 w-3 xs:h-3.5 xs:w-3.5" />
                       </button>
@@ -866,7 +872,7 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role,jsx-a11y/prefer-tag-over-role */}
           <div
             role="group"
-            aria-label="Notes sans dossier"
+            aria-label={t('unfiledNotes')}
             onDragOver={handleDragOver}
             onDrop={e => {
               handleDrop(undefined, e);
@@ -894,7 +900,7 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                 }`}
               />
               <FolderIcon className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-4 sm:w-4 laptop:h-4.5 laptop:w-4.5 flex-shrink-0" />
-              <span>Sans dossier</span>
+              <span>{t('unfiled')}</span>
               <span className="ml-auto text-neutral-500 dark:text-neutral-400 text-xs">
                 {notes.filter(n => !n.folder_id).length}
               </span>
@@ -905,8 +911,8 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
                   handleCreateNoteInFolder(undefined);
                 }}
                 className="opacity-0 group-hover:opacity-100 p-0.5 xs:p-1 hover:bg-green-100 dark:hover:bg-green-900/30 rounded text-green-600"
-                title="Créer une note sans dossier"
-                aria-label="Créer une note sans dossier"
+                title={t('createUnfiledNote')}
+                aria-label={t('createUnfiledNote')}
               >
                 <Plus className="h-3 w-3 xs:h-3.5 xs:w-3.5" />
               </button>
@@ -944,10 +950,10 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
         {notes.length === 0 && (
           <div className="text-center py-6 xs:py-8 sm:py-10 px-3 xs:px-4 sm:px-6">
             <p className="text-xs xs:text-sm sm:text-base text-neutral-500 dark:text-neutral-400">
-              Aucune note.
+              {t('noNotes')}
             </p>
             <p className="text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 mt-1">
-              Créez-en une pour commencer.
+              {t('createNoteToStart')}
             </p>
           </div>
         )}
@@ -979,15 +985,16 @@ function LeftSidebarContent(props: LeftSidebarContentProps) {
 
 /** Right sidebar content — metadata inspector */
 function RightSidebarContent({ activeNoteId }: { readonly activeNoteId?: string | null }) {
+  const { t } = useLanguage();
   return (
     <div className="hidden laptop-sm:block w-64 laptop:w-72 laptop-lg:w-80 desktop:w-96 bg-neutral-100 dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 p-4 laptop:p-5 laptop-lg:p-6 overflow-y-auto">
       <h3 className="text-base laptop:text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 laptop:mb-5">
-        Métadonnées
+        {t('metadata')}
       </h3>
       {activeNoteId ? (
         <div className="space-y-3 laptop:space-y-4 text-sm laptop:text-base text-neutral-700 dark:text-neutral-300">
           <div>
-            <div className="font-semibold mb-1 laptop:mb-1.5">ID de la note</div>
+            <div className="font-semibold mb-1 laptop:mb-1.5">{t('noteIdLabel')}</div>
             <div className="text-neutral-500 dark:text-neutral-400 font-mono text-xs laptop:text-sm break-all">
               {activeNoteId}
             </div>
@@ -995,7 +1002,7 @@ function RightSidebarContent({ activeNoteId }: { readonly activeNoteId?: string 
         </div>
       ) : (
         <p className="text-sm laptop:text-base text-neutral-500 dark:text-neutral-400">
-          Sélectionnez une note pour voir les détails
+          {t('selectNoteForDetails')}
         </p>
       )}
     </div>
@@ -1022,6 +1029,7 @@ export default function Sidebar({
   permanentlyDeleteFolder,
   reloadFolders,
 }: SidebarProps) {
+  const { t, locale } = useLanguage();
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [localFolders, setLocalFolders] = useState<Folder[]>([]);
@@ -1098,8 +1106,8 @@ export default function Sidebar({
     const notesInFolder = notes.filter(n => n.folder_id === folderId);
     const message =
       notesInFolder.length > 0
-        ? `Supprimer ce dossier ? Les ${notesInFolder.length} note(s) seront déplacées vers la corbeille.`
-        : 'Supprimer ce dossier vide ?';
+        ? t('deleteFolderConfirmWithNotes', { count: notesInFolder.length })
+        : t('deleteFolderConfirmEmpty');
 
     if (globalThis.confirm(message)) {
       try {
@@ -1137,8 +1145,8 @@ export default function Sidebar({
     const notesInFolder = trashNotes.filter(n => n.folder_id === folderId);
     const message =
       notesInFolder.length > 0
-        ? `Cette action est irréversible. Le dossier "${folder?.name}" et ses ${notesInFolder.length} note(s) seront supprimés définitivement.`
-        : `Cette action est irréversible. Supprimer définitivement le dossier "${folder?.name}" ?`;
+        ? t('deleteFolderPermanentlyWithNotes', { name: folder?.name ?? '', count: notesInFolder.length })
+        : t('deleteFolderPermanentlyConfirm', { name: folder?.name ?? '' });
 
     if (globalThis.confirm(message)) {
       try {
@@ -1214,8 +1222,8 @@ export default function Sidebar({
 
     const message =
       totalNotes > 0
-        ? `Supprimer ${selectedFolderIds.size} dossier(s) sélectionné(s) ? Les ${totalNotes} note(s) seront déplacées vers la corbeille.`
-        : `Supprimer ${selectedFolderIds.size} dossier(s) vide(s) sélectionné(s) ?`;
+        ? t('deleteSelectedFoldersConfirmWithNotes', { count: selectedFolderIds.size, countNotes: totalNotes })
+        : t('deleteSelectedEmptyFoldersConfirm', { count: selectedFolderIds.size });
 
     if (globalThis.confirm(message)) {
       try {
@@ -1290,9 +1298,7 @@ export default function Sidebar({
       return;
     }
 
-    const confirmed = globalThis.confirm(
-      `Supprimer ${selectedNoteIds.size} note(s) sélectionnée(s) ?`
-    );
+    const confirmed = globalThis.confirm(t('deleteSelectedNotesConfirm', { count: selectedNoteIds.size }));
     if (confirmed) {
       try {
         for (const noteId of selectedNoteIds) {
@@ -1359,9 +1365,7 @@ export default function Sidebar({
   const handleEmptyTrash = async () => {
     const totalItems = trashNotes.length + trashFolders.length;
     if (
-      globalThis.confirm(
-        `Cette action est irréversible. Supprimer définitivement ${totalItems} élément(s) de la corbeille ?`
-      )
+      globalThis.confirm(t('emptyTrashConfirm', { count: totalItems }))
     ) {
       try {
         for (const folder of trashFolders) {
@@ -1406,9 +1410,7 @@ export default function Sidebar({
       return;
     }
     if (
-      globalThis.confirm(
-        `Cette action est irréversible. Supprimer définitivement ${selectedTrashItems.size} élément(s) sélectionné(s) ?`
-      )
+      globalThis.confirm(t('deleteSelectedItemsConfirm', { count: selectedTrashItems.size }))
     ) {
       try {
         for (const itemId of selectedTrashItems) {
@@ -1506,7 +1508,7 @@ export default function Sidebar({
     if (!createNote) {
       return;
     }
-    const title = `Note ${new Date().toLocaleDateString('fr-FR')}`;
+    const title = t('noteTitleWithDate', { date: new Date().toLocaleDateString(locale) });
     const { data } = await createNote(title, '', folderId);
     if (data && onNoteSelect) {
       onNoteSelect(data.id);
@@ -1558,7 +1560,7 @@ export default function Sidebar({
     if (!createNote) {
       return;
     }
-    const title = `Note ${new Date().toLocaleDateString('fr-FR')}`;
+    const title = t('noteTitleWithDate', { date: new Date().toLocaleDateString(locale) });
     const { data } = await createNote(title, '');
     if (data && onNoteSelect) {
       onNoteSelect(data.id);
@@ -1622,7 +1624,7 @@ export default function Sidebar({
       return;
     }
 
-    if (globalThis.confirm('Êtes-vous sûr de vouloir supprimer cette note ?')) {
+    if (globalThis.confirm(t('deleteNoteConfirm'))) {
       try {
         await deleteNote(noteId);
       } catch (err) {
@@ -1649,7 +1651,7 @@ export default function Sidebar({
       return;
     }
 
-    if (globalThis.confirm('Cette action est irréversible. Supprimer définitivement ?')) {
+    if (globalThis.confirm(t('deletePermanentlyConfirm'))) {
       try {
         await permanentlyDeleteNote(noteId);
       } catch (err) {
@@ -1667,7 +1669,7 @@ export default function Sidebar({
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/prefer-tag-over-role
     <div
       role="button"
-      aria-label={`Note: ${note.title || 'Sans titre'}`}
+      aria-label={t('noteAriaLabel', { title: note.title || t('untitled') })}
       tabIndex={0}
       key={note.id}
       draggable
@@ -1720,16 +1722,16 @@ export default function Sidebar({
           <button
             onClick={e => saveEditing(note.id, e)}
             className="flex-shrink-0 p-1 xs:p-1.5 sm:p-1.5 laptop:p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded text-green-600 dark:text-green-400 min-w-[36px] min-h-[36px] xs:min-w-[40px] xs:min-h-[40px] flex items-center justify-center"
-            title="Sauvegarder"
-            aria-label="Sauvegarder"
+            title={t('save')}
+            aria-label={t('save')}
           >
             <Check className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-4 sm:w-4 laptop:h-4.5 laptop:w-4.5" />
           </button>
           <button
             onClick={cancelEditing}
             className="flex-shrink-0 p-1 xs:p-1.5 sm:p-1.5 laptop:p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600 dark:text-red-400 min-w-[36px] min-h-[36px] xs:min-w-[40px] xs:min-h-[40px] flex items-center justify-center"
-            title="Annuler"
-            aria-label="Annuler"
+            title={t('cancel')}
+            aria-label={t('cancel')}
           >
             <X className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-4 sm:w-4 laptop:h-4.5 laptop:w-4.5" />
           </button>
@@ -1776,8 +1778,8 @@ export default function Sidebar({
                 <DropdownMenu.Trigger asChild>
                   <button
                     className="p-1 laptop:p-1.5 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded text-purple-600 dark:text-purple-400 min-w-[32px] min-h-[32px] laptop:min-w-[36px] laptop:min-h-[36px] flex items-center justify-center transition-colors outline-none"
-                    title="Déplacer vers..."
-                    aria-label="Déplacer vers..."
+                    title={t('moveTo')}
+                    aria-label={t('moveTo')}
                     onClick={e => {
                       e.stopPropagation();
                     }}
@@ -1800,7 +1802,7 @@ export default function Sidebar({
                       onSelect={() => moveNoteToFolder(note.id, undefined)}
                     >
                       <FolderIcon className="h-3.5 w-3.5 xs:h-4 xs:w-4" />
-                      <span>Sans dossier</span>
+                      <span>{t('unfiled')}</span>
                     </DropdownMenu.Item>
 
                     {folders.map(folder => (
@@ -1823,16 +1825,16 @@ export default function Sidebar({
                 startEditing(note, e);
               }}
               className="p-1 laptop:p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 min-w-[32px] min-h-[32px] laptop:min-w-[36px] laptop:min-h-[36px] flex items-center justify-center transition-colors"
-              title="Renommer"
-              aria-label="Renommer"
+              title={t('rename')}
+              aria-label={t('rename')}
             >
               <Edit2 className="h-3.5 w-3.5 laptop:h-4 laptop:w-4" />
             </button>
             <button
               onClick={e => handleDeleteNote(note.id, e)}
               className="p-1 laptop:p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600 dark:text-red-400 min-w-[32px] min-h-[32px] laptop:min-w-[36px] laptop:min-h-[36px] flex items-center justify-center transition-colors"
-              title="Supprimer"
-              aria-label="Supprimer"
+              title={t('delete')}
+              aria-label={t('delete')}
             >
               <Trash2 className="h-3.5 w-3.5 laptop:h-4 laptop:w-4" />
             </button>

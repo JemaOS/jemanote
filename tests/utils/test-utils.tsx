@@ -4,6 +4,7 @@ import React, { ReactElement } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 // Create a custom render function that includes providers
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -24,7 +25,9 @@ function AllTheProviders({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ThemeProvider>{children}</ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </LanguageProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

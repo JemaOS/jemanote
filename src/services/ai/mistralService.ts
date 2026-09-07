@@ -8,6 +8,8 @@
 
 import localforage from 'localforage';
 
+import { translate } from '@/i18n/translations';
+
 interface AIConfig {
   apiKey: string;
   baseURL: string;
@@ -192,9 +194,7 @@ class MistralAIService {
     skipCache?: boolean
   ): Promise<AIResponse> {
     if (!this.isConfigured()) {
-      throw new Error(
-        'Clé API Mistral non configurée. Veuillez configurer la clé dans les paramètres.'
-      );
+      throw new Error(translate('mistralKeyNotConfigured'));
     }
 
     const cacheKey = this.getCacheKey(prompt, options);
@@ -256,24 +256,24 @@ class MistralAIService {
         let errorMessage = '';
         switch (response.status) {
           case 401:
-            errorMessage =
-              'Clé API Mistral invalide ou expirée. Veuillez vérifier votre configuration ou contacter le support.';
+            errorMessage = translate('mistralKeyInvalidOrExpired');
             break;
           case 429:
-            errorMessage =
-              'Quota API dépassé. Veuillez réessayer plus tard ou mettre à niveau votre plan Mistral.';
+            errorMessage = translate('apiQuotaExceeded');
             break;
           case 500:
           case 502:
           case 503:
-            errorMessage =
-              'Serveur Mistral temporairement indisponible. Veuillez réessayer dans quelques instants.';
+            errorMessage = translate('mistralServerUnavailable');
             break;
           case 400:
-            errorMessage = `Requête invalide: ${error.error?.message || 'Paramètres incorrects'}`;
+            errorMessage = translate('invalidRequest', {
+              message: error.error?.message || translate('incorrectParameters'),
+            });
             break;
           default:
-            errorMessage = error.error?.message || `Erreur API (code ${response.status})`;
+            errorMessage =
+              error.error?.message || translate('apiErrorCode', { code: response.status });
         }
 
         throw new Error(errorMessage);
@@ -300,7 +300,7 @@ class MistralAIService {
       };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Génération annulée');
+        throw new Error(translate('generationCancelled'));
       }
       console.error('Erreur API Mistral:', error);
       throw error;

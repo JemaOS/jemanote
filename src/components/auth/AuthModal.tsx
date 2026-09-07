@@ -4,14 +4,15 @@
 import { Mail, Lock, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 
 // Helper function to get button text based on state
-function getButtonText(loading: boolean, isLogin: boolean): string {
+function getButtonText(loading: boolean, isLogin: boolean, t: (key: string) => string): string {
   if (loading) {
-    return 'Chargement...';
+    return t('loading');
   }
-  return isLogin ? 'Se connecter' : "S'inscrire";
+  return isLogin ? t('signIn') : t('signUp');
 }
 
 interface AuthModalProps {
@@ -20,6 +21,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ onClose }: AuthModalProps) {
   const { signIn, signUp } = useAuth();
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -65,7 +67,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     } catch (err) {
       // Handle error - log for debugging but show user-friendly message
       console.error('Auth error:', err);
-      setError('Une erreur est survenue');
+      setError(t('anErrorOccurred'));
       // Even on error, close the modal immediately
       dialogRef.current?.close();
       onClose();
@@ -84,7 +86,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           onClick={handleClose}
           type="button"
           className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors min-w-touch min-h-touch flex items-center justify-center"
-          aria-label="Fermer"
+          aria-label={t('close')}
         >
           <X className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
         </button>
@@ -94,10 +96,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             id="auth-modal-title"
             className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2"
           >
-            Synchronisation Cloud
+            {t('cloudSync')}
           </h2>
           <p className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300">
-            Connectez-vous pour synchroniser vos notes sur tous vos appareils
+            {t('cloudSyncDesc')}
           </p>
         </div>
 
@@ -116,7 +118,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               return `${baseClasses} ${isLogin ? activeClasses : inactiveClasses}`;
             })()}
           >
-            Connexion
+            {t('login')}
           </button>
           <button
             onClick={() => {
@@ -132,7 +134,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               return `${baseClasses} ${isLogin ? inactiveClasses : activeClasses}`;
             })()}
           >
-            Inscription
+            {t('register')}
           </button>
         </div>
 
@@ -142,7 +144,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               htmlFor="email"
               className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5"
             >
-              Email
+              {t('email')}
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500 dark:text-neutral-400" />
@@ -155,7 +157,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 }}
                 required
                 className="w-full h-11 sm:h-12 pl-10 pr-4 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm sm:text-base text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="votre@email.com"
+                placeholder={t('emailPlaceholder')}
               />
             </div>
           </div>
@@ -165,7 +167,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               htmlFor="password"
               className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5"
             >
-              Mot de passe
+              {t('password')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500 dark:text-neutral-400" />
@@ -195,11 +197,11 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             disabled={loading}
             className="w-full h-11 sm:h-12 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base min-h-touch"
           >
-            {getButtonText(loading, isLogin)}
+            {getButtonText(loading, isLogin, t)}
           </button>
 
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 text-center px-2">
-            Vos notes locales seront automatiquement synchronisées après connexion
+            {t('localNotesSyncAfterLogin')}
           </p>
         </form>
       </div>

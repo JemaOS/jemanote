@@ -14,6 +14,7 @@ import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import WaveformPlayer from '@/components/ui/WaveformPlayer';
+import { translate } from '@/i18n/translations';
 import { LocalStorage } from '@/lib/localStorage';
 
 interface AudioWidgetDOM extends HTMLElement {
@@ -42,14 +43,14 @@ class AudioWidget extends WidgetType {
           container._reactRoot = root;
           root.render(React.createElement(WaveformPlayer, { blob }));
         } else {
-          container.textContent = 'Audio introuvable';
+          container.textContent = translate('audioNotFound');
           container.style.color = '#ef4444';
           container.style.fontSize = '0.875rem';
         }
       })
       .catch(err => {
         console.error(err);
-        container.textContent = 'Erreur chargement';
+        container.textContent = translate('audioLoadError');
         container.style.color = '#ef4444';
       });
 
