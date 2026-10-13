@@ -398,7 +398,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     mistralKeyInvalidOrExpired:
       'Mistral API key invalid or expired. Please check your configuration or contact support.',
     apiQuotaExceeded:
-      'API quota exceeded. Please try again later or upgrade your Mistral plan.',
+      'API quota exceeded. Note: Le Chat and the API are separate — your chat subscription does not provide API quota. Use a pay-as-you-go key from console.mistral.ai (Billing/Limits), or retry later.',
+    mistralApiVsLeChat:
+      'Use a pay-as-you-go API key from console.mistral.ai — it is independent from your Le Chat subscription (separate API quota).',
     mistralServerUnavailable:
       'Mistral server temporarily unavailable. Please try again in a few moments.',
     invalidRequest: 'Invalid request: {message}',
@@ -839,7 +841,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     mistralKeyInvalidOrExpired:
       'Clé API Mistral invalide ou expirée. Veuillez vérifier votre configuration ou contacter le support.',
     apiQuotaExceeded:
-      'Quota API dépassé. Veuillez réessayer plus tard ou mettre à niveau votre plan Mistral.',
+      'Quota API dépassé. À noter : Le Chat et l’API sont séparés — votre abonnement au chat ne fournit pas de quota API. Utilisez une clé pay-as-you-go sur console.mistral.ai (Facturation/Limites), ou réessayez plus tard.',
+    mistralApiVsLeChat:
+      'Utilisez une clé API pay-as-you-go de console.mistral.ai — c’est indépendant de votre abonnement Le Chat (quota API séparé).',
     mistralServerUnavailable:
       'Serveur Mistral temporairement indisponible. Veuillez réessayer dans quelques instants.',
     invalidRequest: 'Requête invalide: {message}',

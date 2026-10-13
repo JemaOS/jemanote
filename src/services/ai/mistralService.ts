@@ -371,6 +371,28 @@ class MistralAIService {
   }
 
   /**
+   * POST vers Mistral. Si l'API répond 429 avec un en-tête Retry-After,
+   * on attend puis on retente une fois (en respectant l'annulation).
+   */
+  private async fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+    const response = await fetch(url, init);
+    if (response.status === 429) {
+      const retryAfter = Number(response.headers?.get?.('Retry-After') ?? '0');
+      if (Number.isFinite(retryAfter) && retryAfter > 0 && retryAfter <= 30) {
+        await new Promise<void>(resolve => {
+          setTimeout(resolve, retryAfter * 1000);
+        });
+        const signal = init.signal as AbortSignal | undefined;
+        if (signal?.aborted) {
+          throw new DOMException('Aborted', 'AbortError');
+        }
+        return fetch(url, init);
+      }
+    }
+    return response;
+  }
+
+  /**
    * Appel API Mistral direct avec gestion d'erreurs
    */
   private async callAPI(
@@ -407,7 +429,7 @@ class MistralAIService {
 
       onProgress?.(20);
 
-      const response = await fetch(this.config.baseURL, {
+      const response = await this.fetchWithRetry(this.config.baseURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -441,8 +463,14 @@ class MistralAIService {
           case 401:
           case 403:
             throw new Error(translate('mistralKeyInvalidOrExpired'));
-          case 429:
-            throw new Error(translate('apiQuotaExceeded'));
+          case 429: {
+            const quotaDetail = this.extractErrorMessage(data, '');
+            throw new Error(
+              quotaDetail
+                ? `${translate('apiQuotaExceeded')} (Mistral : ${quotaDetail})`
+                : translate('apiQuotaExceeded')
+            );
+          }
           case 500:
           case 502:
           case 503:

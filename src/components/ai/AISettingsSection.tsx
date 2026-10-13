@@ -294,6 +294,9 @@ export default function AISettingsSection() {
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 {t('mistralApiKeyHelp')}
               </p>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                {t('mistralApiVsLeChat')}
+              </p>
             </div>
 
             <button
