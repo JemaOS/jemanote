@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   KeyRound,
   LogOut,
+  LogIn,
   ShieldCheck,
   Server,
   Eye,
@@ -25,6 +26,7 @@ import {
 
 interface AISettingsSectionProps {
   readonly userId?: string | null;
+  readonly onRequestLogin?: () => void;
 }
 
 const EMPTY_STATUS: AIConnectionStatus = {
@@ -33,7 +35,10 @@ const EMPTY_STATUS: AIConnectionStatus = {
   key_last4: null,
 };
 
-export default function AISettingsSection({ userId }: AISettingsSectionProps) {
+export default function AISettingsSection({
+  userId,
+  onRequestLogin,
+}: AISettingsSectionProps) {
   const { t } = useLanguage();
 
   const [status, setStatus] = useState<AIConnectionStatus>(EMPTY_STATUS);
@@ -181,10 +186,21 @@ export default function AISettingsSection({ userId }: AISettingsSectionProps) {
   const renderStatus = () => {
     if (!userId) {
       return (
-        <div className="p-3 sm:p-4 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-md">
-          <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300">
-            {t('aiAuthRequired')}
-          </p>
+        <div className="p-3 sm:p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-md space-y-3">
+          <div className="flex items-start gap-3">
+            <LogIn className="h-5 w-5 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm text-primary-800 dark:text-neutral-200">
+              {t('aiAuthRequired')}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onRequestLogin}
+            className="w-full px-4 py-2.5 text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 rounded-md transition-colors flex items-center justify-center gap-2"
+          >
+            <LogIn className="w-4 h-4" />
+            {t('signIn')}
+          </button>
         </div>
       );
     }
