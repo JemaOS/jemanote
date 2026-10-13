@@ -178,7 +178,7 @@ export default function AIPanel({
 
   // Fonction: Brainstorming
   const handleBrainstorm = async () => {
-    const topic = brainstormTopic ?? currentNote?.title ?? '';
+    const topic = brainstormTopic || currentNote?.title || '';
 
     if (!topic) {
       setError(t('enterBrainstormTopic'));

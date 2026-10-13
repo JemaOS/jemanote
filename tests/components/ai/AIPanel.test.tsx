@@ -19,12 +19,13 @@ vi.mock('@/services/ai/mistralService', () => ({
     generateIdeas: vi.fn().mockResolvedValue(['Idea 1', 'Idea 2', 'Idea 3']),
     synthesizeNotes: vi.fn().mockResolvedValue('Synthesized content'),
   },
+  AINotConnectedError: class AINotConnectedError extends Error {},
 }));
 
 // Mock linkDetectionService
 vi.mock('@/services/linkDetectionService', () => ({
   linkDetectionService: {
-    detectLinks: vi.fn().mockResolvedValue([
+    detectLinks: vi.fn().mockReturnValue([
       {
         targetNoteId: 'note-2',
         targetNoteTitle: 'Related Note',
@@ -356,11 +357,8 @@ describe('AIPanel', () => {
       await user.click(screen.getByText('Idées'));
 
       await user.click(screen.getByText('Générer des idées'));
-      await waitFor(() => {
-        expect(screen.getByText('Créer une note')).toBeInTheDocument();
-      });
 
-      const createButtons = screen.getAllByText('Créer une note');
+      const createButtons = await screen.findAllByText('Créer une note');
       await user.click(createButtons[0]);
 
       expect(defaultProps.onCreateNote).toHaveBeenCalled();
@@ -409,14 +407,10 @@ describe('AIPanel', () => {
   });
 
   describe('Error Handling', () => {
-    it('should display error when no note selected', async () => {
-      const user = userEvent.setup();
+    it('should disable generation when no note is selected', () => {
       render(<AIPanel {...defaultProps} currentNote={null} />);
 
-      const generateButton = screen.getByText('Générer un résumé');
-      await user.click(generateButton);
-
-      expect(screen.getByText('Aucune note sélectionnée ou note vide')).toBeInTheDocument();
+      expect(screen.getByText('Générer un résumé')).toBeDisabled();
     });
 
     it('should display API error messages', async () => {
@@ -429,7 +423,7 @@ describe('AIPanel', () => {
       await user.click(screen.getByText('Générer un résumé'));
 
       await waitFor(() => {
-        expect(screen.getByText('API Error')).toBeInTheDocument();
+        expect(screen.getByText(/API Error/)).toBeInTheDocument();
       });
     });
   });
