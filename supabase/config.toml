@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Jema Technology.
+# Supabase CLI configuration for the JemaNote AI backend.
+#
+# JWT verification is disabled on the AI functions because they enforce
+# *user-level* authentication themselves (anon/service keys would otherwise be
+# accepted as valid JWTs by the gateway).
+
+project_id = "jemanote"
+
+[functions.mistral-proxy]
+verify_jwt = false
+
+[functions.mistral-credentials]
+verify_jwt = false

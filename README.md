@@ -46,7 +46,7 @@ JemaNote est une application de prise de notes Progressive Web App (PWA) dévelo
 
 ### Intelligence Artificielle
 
-- 🤖 Intégration IA avec Mistral AI
+- 🤖 Intégration IA avec Mistral AI (compte Mistral personnel, connexion sans clé visible)
 - 📋 Résumés automatiques
 - ✍️ Assistance à la rédaction
 
@@ -92,13 +92,15 @@ npm run build
 Copiez le fichier `.env.example` vers `.env` et configurez les variables :
 
 ```env
-# Supabase (optionnel - pour la synchronisation cloud)
+# Supabase (requis pour la connexion du compte Mistral et la synchro cloud)
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Mistral AI (optionnel - pour les fonctionnalités IA)
-VITE_MISTRAL_API_KEY=your_mistral_api_key
 ```
+
+> **IA Mistral** : aucune clé n'est stockée côté client. Chaque utilisateur
+> connecte son propre compte Mistral depuis **Paramètres → Assistant IA**
+> (la clé est validée puis chiffrée côté Supabase Vault et n'est jamais
+> renvoyée au navigateur). Voir `supabase/README.md` pour déployer le backend.
 
 ## 💻 Utilisation
 

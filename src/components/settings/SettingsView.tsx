@@ -168,7 +168,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
           </div>
 
           {/* Configuration IA */}
-          <AISettingsSection />
+          <AISettingsSection userId={userId} />
 
           {userId && (
             <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">

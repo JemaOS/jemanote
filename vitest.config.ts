@@ -6,8 +6,10 @@ export default defineConfig({
   plugins: [react() as any],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      // NOTE: '@/tests' must be listed before '@', otherwise the generic '@'
+      // alias swallows it and '@/tests/...' resolves to src/tests/... (missing).
       '@/tests': path.resolve(__dirname, './tests'),
+      '@': path.resolve(__dirname, './src'),
     },
   },
   test: {

@@ -368,6 +368,30 @@ export const translations: Record<Lang, Record<string, string>> = {
     aiServiceUnavailableWithError: 'AI service unavailable: {error}',
     aiServiceConfigProblem: 'The AI service has a configuration problem.',
 
+    // AI account connection (per-user Mistral account)
+    connectMistralAccount: 'Connect my Mistral account',
+    mistralConnectDesc:
+      'Use your own Mistral account. Enter your key once: it is stored securely and never shown again.',
+    mistralApiKeyLabel: 'Mistral key',
+    mistralApiKeyPlaceholder: 'Paste your Mistral key',
+    mistralApiKeyHelp: 'Your key is encrypted and will never be displayed again.',
+    connect: 'Connect',
+    connecting: 'Connecting...',
+    disconnectMistral: 'Disconnect',
+    disconnecting: 'Disconnecting...',
+    mistralAccountConnected: 'Account connected',
+    connectedAs: 'Connected (••••{last4})',
+    mistralNotConnected: 'No Mistral account connected',
+    aiModelLabel: 'AI model',
+    aiModelSaved: 'Model updated',
+    mistralReconnectHint: 'You can change the model or disconnect at any time.',
+    aiNotConnected: 'Connect your Mistral account to use the AI features.',
+    aiAuthRequired: 'Sign in to connect your Mistral account.',
+    aiInvalidKey: 'This key was rejected by Mistral. Check it and try again.',
+    connectSuccess: 'Your Mistral account is connected.',
+    showKey: 'Show',
+    hideKey: 'Hide',
+
     // Services
     mistralKeyNotConfigured:
       'Mistral API key not configured. Please configure the key in the settings.',
@@ -784,6 +808,30 @@ export const translations: Record<Lang, Record<string, string>> = {
     aiServiceUnavailableWithError: 'Service IA indisponible : {error}',
     aiServiceConfigProblem:
       'Le service IA rencontre un problème de configuration.',
+
+    // AI account connection (per-user Mistral account)
+    connectMistralAccount: 'Connecter mon compte Mistral',
+    mistralConnectDesc:
+      'Utilisez votre propre compte Mistral. Saisissez votre clé une seule fois : elle est stockée de façon sécurisée et n’est plus jamais affichée.',
+    mistralApiKeyLabel: 'Clé Mistral',
+    mistralApiKeyPlaceholder: 'Collez votre clé Mistral',
+    mistralApiKeyHelp: 'Votre clé est chiffrée et ne sera plus jamais affichée.',
+    connect: 'Connecter',
+    connecting: 'Connexion...',
+    disconnectMistral: 'Déconnecter',
+    disconnecting: 'Déconnexion...',
+    mistralAccountConnected: 'Compte connecté',
+    connectedAs: 'Connecté (••••{last4})',
+    mistralNotConnected: 'Aucun compte Mistral connecté',
+    aiModelLabel: 'Modèle IA',
+    aiModelSaved: 'Modèle mis à jour',
+    mistralReconnectHint: 'Vous pouvez changer de modèle ou vous déconnecter à tout moment.',
+    aiNotConnected: 'Connectez votre compte Mistral pour utiliser les fonctionnalités IA.',
+    aiAuthRequired: 'Connectez-vous pour associer votre compte Mistral.',
+    aiInvalidKey: 'Clé refusée par Mistral. Vérifiez-la et réessayez.',
+    connectSuccess: 'Votre compte Mistral est connecté.',
+    showKey: 'Afficher',
+    hideKey: 'Masquer',
 
     // Services
     mistralKeyNotConfigured:

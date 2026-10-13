@@ -10,7 +10,7 @@ import { X, Sparkles, Tag, Lightbulb, FileText, Link as LinkIcon } from 'lucide-
 import { useState, useEffect } from 'react';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { aiService, type SummaryHistoryEntry } from '@/services/ai/mistralService';
+import { aiService, AINotConnectedError, type SummaryHistoryEntry } from '@/services/ai/mistralService';
 import { linkDetectionService, type LinkSuggestion } from '@/services/linkDetectionService';
 import type { Note } from '@/types';
 
@@ -121,7 +121,9 @@ export default function AIPanel({
         err instanceof Error ? err.message : t('summaryGenerationError');
 
       // Message plus clair pour l'utilisateur
-      if (
+      if (err instanceof AINotConnectedError) {
+        setError(t('aiNotConnected'));
+      } else if (
         errorMessage.includes('API Mistral non configurée') ||
         errorMessage.includes('Mistral API key not configured') ||
         errorMessage.includes('MISSING_API_KEY')
@@ -198,7 +200,7 @@ export default function AIPanel({
 
   // Fonction: Créer une note depuis une idée
   const handleCreateNoteFromIdea = async (idea: string) => {
-    await onCreateNote(t('ideaPrefix', { idea: idea.substring(0, 50) }) + '...', idea);
+    await onCreateNote(`${t('ideaPrefix', { idea: idea.substring(0, 50) })  }...`, idea);
   };
 
   // Fonction: Ajouter l'idée à la note actuelle
