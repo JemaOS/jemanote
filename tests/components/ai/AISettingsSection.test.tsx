@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Jema Technology.
-// Tests for AISettingsSection component
+// Tests for AISettingsSection component (local Mistral mode, no props)
 
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -55,19 +55,6 @@ describe('AISettingsSection', () => {
     vi.clearAllMocks();
   });
 
-  it('shows the auth-required message and no connect form when userId is null', async () => {
-    const aiService = await getAiService();
-
-    render(<AISettingsSection userId={null} />);
-
-    expect(await screen.findByText(translate('aiAuthRequired'))).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(translate('mistralApiKeyPlaceholder'))).toBeNull();
-    expect(
-      screen.queryByRole('button', { name: translate('connectMistralAccount') })
-    ).toBeNull();
-    expect(aiService.getConnectionStatus).not.toHaveBeenCalled();
-  });
-
   it('shows the connect form when the account is not connected', async () => {
     const aiService = await getAiService();
     aiService.getConnectionStatus.mockResolvedValue({
@@ -76,7 +63,7 @@ describe('AISettingsSection', () => {
       key_last4: null,
     });
 
-    render(<AISettingsSection userId="u1" />);
+    render(<AISettingsSection />);
 
     const input = await screen.findByPlaceholderText(translate('mistralApiKeyPlaceholder'));
     expect(input).toBeInTheDocument();
@@ -94,7 +81,7 @@ describe('AISettingsSection', () => {
       key_last4: 'abcd',
     });
 
-    render(<AISettingsSection userId="u1" />);
+    render(<AISettingsSection />);
 
     expect(
       await screen.findByText(translate('connectedAs', { last4: 'abcd' }))
@@ -118,14 +105,17 @@ describe('AISettingsSection', () => {
       key_last4: 'wxyz',
     });
 
-    render(<AISettingsSection userId="u1" />);
+    render(<AISettingsSection />);
 
     const input = await screen.findByPlaceholderText(translate('mistralApiKeyPlaceholder'));
     await user.type(input, 'sk-test-key-123');
     await user.click(screen.getByRole('button', { name: translate('connectMistralAccount') }));
 
     await waitFor(() => {
-      expect(aiService.connectAccount).toHaveBeenCalledWith('sk-test-key-123', 'mistral-medium-latest');
+      expect(aiService.connectAccount).toHaveBeenCalledWith(
+        'sk-test-key-123',
+        'mistral-medium-latest'
+      );
     });
   });
 
@@ -143,7 +133,7 @@ describe('AISettingsSection', () => {
       key_last4: 'abcd',
     });
 
-    render(<AISettingsSection userId="u1" />);
+    render(<AISettingsSection />);
 
     await screen.findByText(translate('connectedAs', { last4: 'abcd' }));
     const select = screen.getByLabelText(translate('aiModelLabel'));
@@ -164,7 +154,7 @@ describe('AISettingsSection', () => {
     });
     aiService.disconnectAccount.mockResolvedValue(undefined);
 
-    render(<AISettingsSection userId="u1" />);
+    render(<AISettingsSection />);
 
     const disconnect = await screen.findByRole('button', {
       name: translate('disconnectMistral'),

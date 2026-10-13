@@ -2,79 +2,58 @@
 // Distributed under the license specified in the root directory of this project.
 
 /**
- * Integration regression tests for the per-user Mistral backend contract.
+ * Integration regression tests for the LOCAL Mistral credentials contract.
  *
- * MSW handlers are defined INLINE (the shared handlers in
- * tests/integration/mocks/handlers.ts are referenced for style only) so the
- * network contract of the credential endpoints and the chat proxy can be
- * asserted precisely.
+ * In local mode there is no JemaNote account: the user's Mistral key is
+ * validated against https://api.mistral.ai/v1/models and then stored on the
+ * device (localforage store `ai_credentials`, key `mistral`). Chat calls go
+ * directly to https://api.mistral.ai/v1/chat/completions.
+ *
+ * MSW handlers are defined INLINE so the network contract (URLs + headers) of
+ * the local credential endpoints and the direct chat call can be asserted
+ * precisely.
  */
 
 import { http, HttpResponse } from 'msw';
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 
-import { aiService, AINotConnectedError } from '@/services/ai/mistralService';
+import { aiService, AINotConnectedError, AI_DEFAULT_MODEL } from '@/services/ai/mistralService';
+import { translate } from '@/i18n/translations';
+import { mockLocalforage } from '@/tests/__mocks__/localStorage';
 
-const FUNCTIONS_BASE = 'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1';
-const STATUS_URL = `${FUNCTIONS_BASE}/mistral-credentials/status`;
-const CONNECT_URL = `${FUNCTIONS_BASE}/mistral-credentials/connect`;
-const MODEL_URL = `${FUNCTIONS_BASE}/mistral-credentials/model`;
-const DISCONNECT_URL = `${FUNCTIONS_BASE}/mistral-credentials/disconnect`;
-const PROXY_URL = `${FUNCTIONS_BASE}/mistral-proxy`;
+const MODELS_URL = 'https://api.mistral.ai/v1/models';
+const CHAT_URL = 'https://api.mistral.ai/v1/chat/completions';
+const TEST_API_KEY = 'sk-test-key-1234567890';
 
 let server: ReturnType<typeof import('msw/node').setupServer>;
 
 // Captured request data for contract assertions.
-let statusHeaders: { authorization: string | null; apikey: string | null } | null = null;
-let connectBody: unknown = null;
-let modelBody: unknown = null;
-let disconnectCalled = false;
+let modelsCalled = false;
+let modelsAuthHeader: string | null = null;
 
 const handlers = [
-  http.post(STATUS_URL, async ({ request }) => {
-    statusHeaders = {
-      authorization: request.headers.get('authorization'),
-      apikey: request.headers.get('apikey'),
-    };
+  http.get(MODELS_URL, ({ request }) => {
+    modelsCalled = true;
+    modelsAuthHeader = request.headers.get('authorization');
     return HttpResponse.json({
-      connected: true,
-      model: 'mistral-medium-latest',
-      key_last4: '4321',
+      object: 'list',
+      data: [
+        { id: 'mistral-small-latest', object: 'model' },
+        { id: 'mistral-medium-latest', object: 'model' },
+        { id: 'mistral-large-latest', object: 'model' },
+      ],
     });
   }),
 
-  http.post(CONNECT_URL, async ({ request }) => {
-    connectBody = await request.json();
+  http.post(CHAT_URL, async () => {
     return HttpResponse.json({
-      connected: true,
-      model: 'mistral-large-latest',
-      key_last4: 'a-key',
-    });
-  }),
-
-  http.post(MODEL_URL, async ({ request }) => {
-    modelBody = await request.json();
-    return HttpResponse.json({
-      connected: true,
-      model: 'mistral-small-latest',
-      key_last4: '4321',
-    });
-  }),
-
-  http.post(DISCONNECT_URL, async () => {
-    disconnectCalled = true;
-    return HttpResponse.json({ connected: false, model: null, key_last4: null });
-  }),
-
-  http.post(PROXY_URL, async () => {
-    return HttpResponse.json({
-      data: {
-        choices: [{ message: { content: 'RÉSUMÉ' } }],
-        usage: { promptTokens: 10, completionTokens: 3, totalTokens: 13 },
-      },
+      choices: [{ message: { content: 'RÉSUMÉ' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 3, total_tokens: 13 },
     });
   }),
 ];
+
+let clearCacheSpy: { mockRestore: () => void } | undefined;
 
 beforeAll(async () => {
   const { setupServer } = await import('msw/node');
@@ -82,68 +61,133 @@ beforeAll(async () => {
   server.listen({ onUnhandledRequest: 'error' });
 });
 
+beforeEach(async () => {
+  // The localforage mock is a single shared store; reset it between tests.
+  await mockLocalforage.clear();
+  modelsCalled = false;
+  modelsAuthHeader = null;
+});
+
 afterEach(() => {
   server.resetHandlers();
-  statusHeaders = null;
-  connectBody = null;
-  modelBody = null;
-  disconnectCalled = false;
+  clearCacheSpy?.mockRestore();
+  clearCacheSpy = undefined;
 });
 
 afterAll(() => {
   server.close();
 });
 
-describe('Mistral per-user credentials contract', () => {
-  it('getConnectionStatus hits /status with auth headers and returns the status', async () => {
+/** Pre-seed a valid local connection (bypasses clearCache mock artifact). */
+async function seedConnection(model: string = AI_DEFAULT_MODEL): Promise<void> {
+  await mockLocalforage.setItem('mistral', {
+    apiKey: TEST_API_KEY,
+    model,
+    key_last4: TEST_API_KEY.slice(-4),
+    connectedAt: Date.now(),
+  });
+}
+
+describe('Mistral local credentials contract', () => {
+  it('connectAccount GETs /v1/models with the key and persists the connection', async () => {
+    // Isolate the persistence concern from the cache-clearing side effect: under
+    // the shared localforage mock, clearCache() would also wipe the credentials
+    // it just stored (in production these are two separate stores).
+    clearCacheSpy = vi.spyOn(aiService, 'clearCache').mockResolvedValue(undefined);
+
+    const status = await aiService.connectAccount(TEST_API_KEY, 'mistral-large-latest');
+
+    expect(modelsCalled).toBe(true);
+    expect(modelsAuthHeader).toBe(`Bearer ${TEST_API_KEY}`);
+    expect(status).toMatchObject({
+      connected: true,
+      model: 'mistral-large-latest',
+      key_last4: TEST_API_KEY.slice(-4),
+    });
+
+    const persisted = await aiService.getConnectionStatus();
+    expect(persisted.connected).toBe(true);
+    expect(persisted.model).toBe('mistral-large-latest');
+    expect(persisted.key_last4).toBe(TEST_API_KEY.slice(-4));
+  });
+
+  it('getConnectionStatus returns the persisted status', async () => {
+    await seedConnection('mistral-medium-latest');
+
     const status = await aiService.getConnectionStatus();
 
     expect(status).toMatchObject({
       connected: true,
       model: 'mistral-medium-latest',
-      key_last4: '4321',
+      key_last4: TEST_API_KEY.slice(-4),
     });
-    expect(statusHeaders?.authorization).toBeTruthy();
-    expect(statusHeaders?.apikey).toBeTruthy();
+    expect(status.connected_at).toBeTruthy();
   });
 
-  it('connectAccount POSTs api_key + model to /connect and returns the connected status', async () => {
-    const status = await aiService.connectAccount('a-key', 'mistral-large-latest');
+  it('getConnectionStatus reports disconnected when nothing is stored', async () => {
+    const status = await aiService.getConnectionStatus();
 
-    expect(connectBody).toEqual({ api_key: 'a-key', model: 'mistral-large-latest' });
-    expect(status).toMatchObject({ connected: true, model: 'mistral-large-latest' });
+    expect(status).toEqual({
+      connected: false,
+      model: null,
+      key_last4: null,
+      connected_at: null,
+    });
   });
 
-  it('setModel POSTs the model to /model and returns the updated status', async () => {
+  it('setModel updates the stored model', async () => {
+    clearCacheSpy = vi.spyOn(aiService, 'clearCache').mockResolvedValue(undefined);
+    await seedConnection('mistral-medium-latest');
+
     const status = await aiService.setModel('mistral-small-latest');
 
-    expect(modelBody).toEqual({ model: 'mistral-small-latest' });
     expect(status).toMatchObject({ connected: true, model: 'mistral-small-latest' });
+    const reread = await aiService.getConnectionStatus();
+    expect(reread.model).toBe('mistral-small-latest');
   });
 
-  it('disconnectAccount POSTs to /disconnect', async () => {
+  it('disconnectAccount clears the stored connection', async () => {
+    await seedConnection();
+
     await aiService.disconnectAccount();
 
-    expect(disconnectCalled).toBe(true);
+    const status = await aiService.getConnectionStatus();
+    expect(status.connected).toBe(false);
+    expect(status.key_last4).toBeNull();
   });
 
-  it('summarize hits /mistral-proxy and returns the choice content', async () => {
-    const uniqueText = 'Texte unique proxy 5 pour le contrat des identifiants Mistral.';
+  it('connectAccount rejects with the invalid-key message on 401 from /v1/models', async () => {
+    server.use(
+      http.get(MODELS_URL, () =>
+        HttpResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 })
+      )
+    );
+
+    await expect(aiService.connectAccount(TEST_API_KEY)).rejects.toThrow(
+      translate('aiInvalidKey')
+    );
+  });
+
+  it('connectAccount rejects with cannotReachMistral on a network error', async () => {
+    server.use(http.get(MODELS_URL, () => HttpResponse.error()));
+
+    await expect(aiService.connectAccount(TEST_API_KEY)).rejects.toThrow(
+      translate('cannotReachMistral')
+    );
+  });
+
+  it('summarize with no connection rejects with AINotConnectedError', async () => {
+    await expect(
+      aiService.summarize('Texte sans connexion locale Mistral.', 'short')
+    ).rejects.toBeInstanceOf(AINotConnectedError);
+  });
+
+  it('summarize hits api.mistral.ai and returns the native choice content', async () => {
+    await seedConnection();
+    const uniqueText = 'Texte unique local 1 pour le contrat des identifiants Mistral.';
 
     const summary = await aiService.summarize(uniqueText, 'short');
 
     expect(summary).toBe('RÉSUMÉ');
-  });
-
-  it('summarize rejects with AINotConnectedError on 409 not_connected', async () => {
-    server.use(
-      http.post(PROXY_URL, () =>
-        HttpResponse.json({ error: { code: 'not_connected' } }, { status: 409 })
-      )
-    );
-
-    const uniqueText = 'Texte unique proxy 6 pour le contrat des identifiants Mistral.';
-
-    await expect(aiService.summarize(uniqueText, 'short')).rejects.toThrow(AINotConnectedError);
   });
 });

@@ -9,10 +9,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 interface SettingsViewProps {
   readonly userId?: string | null;
-  readonly onRequestLogin?: () => void;
 }
 
-export default function SettingsView({ userId, onRequestLogin }: SettingsViewProps) {
+export default function SettingsView({ userId }: SettingsViewProps) {
   const { theme, setTheme } = useTheme();
   const { t } = useLanguage();
 
@@ -169,7 +168,7 @@ export default function SettingsView({ userId, onRequestLogin }: SettingsViewPro
           </div>
 
           {/* Configuration IA */}
-          <AISettingsSection userId={userId} onRequestLogin={onRequestLogin} />
+          <AISettingsSection />
 
           {userId && (
             <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">

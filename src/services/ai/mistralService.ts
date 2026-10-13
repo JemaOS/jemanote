@@ -2,12 +2,13 @@
 // Distributed under the license specified in the root directory of this project.
 
 /**
- * Service client pour l'API Mistral AI (connexion par utilisateur).
+ * Service client pour l'API Mistral AI — connexion 100 % locale.
  *
- * Chaque utilisateur connecte son propre compte Mistral : la clé est saisie
- * une seule fois, stockée de manière chiffrée côté Supabase (Vault) et n'est
- * jamais renvoyée au navigateur. Les appels passent par les Edge Functions
- * `mistral-credentials` (gestion de la connexion) et `mistral-proxy` (chat).
+ * Aucun compte JemaNote n'est requis : l'utilisateur clique « Se connecter »,
+ * colle sa clé Mistral une seule fois ; elle est validée puis stockée
+ * uniquement sur SON appareil (IndexedDB), et les appels partent directement
+ * vers api.mistral.ai. La clé n'est jamais envoyée à nos serveurs ni
+ * réaffichée dans l'interface.
  *
  * Gestion du cache IndexedDB et de l'historique des résumés.
  */
@@ -40,6 +41,13 @@ export interface AIConnectionStatus {
   connected_at?: string | null;
 }
 
+interface StoredCredentials {
+  apiKey: string;
+  model: string;
+  key_last4: string;
+  connectedAt: number;
+}
+
 interface CacheEntry {
   prompt: string;
   response: string;
@@ -57,9 +65,8 @@ type SummaryHistoryEntry = {
   timestamp: number;
 };
 
-const FALLBACK_SUPABASE_URL = 'https://yadtnmgyrmigqbndnmho.supabase.co';
-const FALLBACK_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhZHRubWd5cm1pZ3FibmRubWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTEzMzMsImV4cCI6MjA3OTIyNzMzM30.0gGlLbXOBSvHEDY0RDApSGWELc5sAEJ4C_hwbPb7FOQ';
+const MISTRAL_API_BASE = 'https://api.mistral.ai/v1';
+const CREDENTIALS_KEY = 'mistral';
 
 export const AI_DEFAULT_MODEL = 'mistral-medium-latest';
 
@@ -69,12 +76,12 @@ export const AI_MODELS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'mistral-large-latest', label: 'Mistral Large' },
 ];
 
-const SUPABASE_URL =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) || FALLBACK_SUPABASE_URL;
-const SUPABASE_ANON_KEY =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || FALLBACK_SUPABASE_ANON_KEY;
-
-const FUNCTIONS_BASE = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1`;
+// Store local des credentials (clé Mistral de l'utilisateur).
+const aiCredentials = localforage.createInstance({
+  name: 'Jemanote',
+  storeName: 'ai_credentials',
+  description: 'Connexion au compte Mistral (stockage local)',
+});
 
 // Configure IndexedDB pour le cache IA
 const aiCache = localforage.createInstance({
@@ -89,7 +96,7 @@ const summaryHistory = localforage.createInstance({
   description: 'Historique des résumés IA',
 });
 
-/** Erreur typée renvoyée quand l'utilisateur n'a pas connecté de compte. */
+/** Erreur typée renvoyée quand aucun compte Mistral n'est connecté. */
 export class AINotConnectedError extends Error {
   constructor() {
     super(translate('aiNotConnected'));
@@ -103,57 +110,50 @@ class MistralAIService {
   private readonly MAX_CACHE_SIZE = 100;
   private readonly MAX_HISTORY_SIZE = 50;
   private abortController: AbortController | null = null;
-  // Dernier état de connexion connu (optimiste tant qu'on n'a pas interrogé le serveur).
-  private connected = true;
+  private connected = false;
 
   constructor() {
     this.config = {
-      baseURL: `${FUNCTIONS_BASE}/mistral-proxy`,
+      baseURL: `${MISTRAL_API_BASE}/chat/completions`,
       model: AI_DEFAULT_MODEL,
       maxTokens: 2048,
       temperature: 0.7,
     };
   }
 
-  /**
-   * Récupère le jeton d'accès de l'utilisateur connecté (si présent).
-   * Import dynamique pour ne pas initialiser le client Supabase au chargement
-   * (et rester robuste lorsque l'environnement n'est pas configuré, ex. tests).
-   */
-  private async getAccessToken(): Promise<string | null> {
+  // -------------------------------------------------------------------------
+  // Stockage local des credentials
+  // -------------------------------------------------------------------------
+
+  private async loadCredentials(): Promise<StoredCredentials | null> {
     try {
-      const { supabase } = await import('@/lib/supabase');
-      const { data } = await supabase.auth.getSession();
-      return data.session?.access_token ?? null;
+      return await aiCredentials.getItem<StoredCredentials>(CREDENTIALS_KEY);
     } catch {
       return null;
     }
   }
 
-  private async authHeaders(): Promise<Record<string, string>> {
-    const token = (await this.getAccessToken()) ?? SUPABASE_ANON_KEY;
-    return {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${token}`,
-    };
+  private async persistCredentials(credentials: StoredCredentials): Promise<void> {
+    await aiCredentials.setItem(CREDENTIALS_KEY, credentials);
+  }
+
+  private async removeCredentials(): Promise<void> {
+    await aiCredentials.removeItem(CREDENTIALS_KEY);
   }
 
   /**
-   * Indique si un compte est connecté (au moins côté configuration locale).
-   * L'appel réseau réel est fait par `getConnectionStatus`.
+   * Indique si un compte Mistral est connecté (état connu).
    */
   isConfigured(): boolean {
-    return this.connected && this.config.model.length > 0;
+    return this.connected;
   }
 
   /**
-   * @deprecated Les clés ne sont plus gérées côté client. La connexion se fait
-   * via `connectAccount` et la clé reste chiffrée côté serveur. Conservé en
-   * no-op pour compatibilité.
+   * @deprecated Les clés ne sont plus configurées ainsi. Conservé en no-op
+   * pour compatibilité.
    */
   setApiKey(_apiKey: string): void {
-    // No-op: la clé API n'est jamais manipulée par le client.
+    // No-op: la connexion se fait via `connectAccount`.
   }
 
   /**
@@ -167,73 +167,102 @@ class MistralAIService {
   }
 
   // -------------------------------------------------------------------------
-  // Gestion de la connexion au compte Mistral de l'utilisateur
+  // Gestion de la connexion au compte Mistral de l'utilisateur (local)
   // -------------------------------------------------------------------------
 
-  private async credentialRequest(
-    action: 'status' | 'connect' | 'model' | 'disconnect',
-    payload?: Record<string, unknown>
-  ): Promise<AIConnectionStatus> {
-    const response = await fetch(`${FUNCTIONS_BASE}/mistral-credentials/${action}`, {
-      method: 'POST',
-      headers: await this.authHeaders(),
-      body: JSON.stringify(payload ?? {}),
-    });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      connected?: boolean;
-      model?: string | null;
-      key_last4?: string | null;
-      connected_at?: string | null;
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error(translate('aiAuthRequired'));
-      }
-      if (response.status === 400 && data.error?.code === 'invalid_key') {
-        throw new Error(translate('aiInvalidKey'));
-      }
-      throw new Error(data.error?.message || translate('aiServiceConfigProblem'));
-    }
-
-    const status: AIConnectionStatus = {
-      connected: Boolean(data.connected),
-      model: data.model ?? null,
-      key_last4: data.key_last4 ?? null,
-      connected_at: data.connected_at ?? null,
-    };
-    if (status.model) {
-      this.config.model = status.model;
-    }
-    this.connected = status.connected;
-    return status;
-  }
-
-  /** Statut de connexion du compte Mistral de l'utilisateur. */
+  /** Statut de connexion du compte Mistral. */
   async getConnectionStatus(): Promise<AIConnectionStatus> {
-    return this.credentialRequest('status');
+    const credentials = await this.loadCredentials();
+    if (!credentials) {
+      this.connected = false;
+      return { connected: false, model: null, key_last4: null, connected_at: null };
+    }
+    this.connected = true;
+    if (credentials.model) {
+      this.config.model = credentials.model;
+    }
+    return {
+      connected: true,
+      model: credentials.model,
+      key_last4: credentials.key_last4,
+      connected_at: new Date(credentials.connectedAt).toISOString(),
+    };
   }
 
-  /** Connecte le compte Mistral de l'utilisateur (clé saisie une seule fois). */
-  async connectAccount(apiKey: string, model: string = AI_DEFAULT_MODEL): Promise<AIConnectionStatus> {
-    const status = await this.credentialRequest('connect', { api_key: apiKey, model });
+  /**
+   * Connecte le compte Mistral : valide la clé auprès de Mistral puis la
+   * stocke localement (jamais envoyée à nos serveurs).
+   */
+  async connectAccount(
+    apiKey: string,
+    model: string = AI_DEFAULT_MODEL
+  ): Promise<AIConnectionStatus> {
+    const key = apiKey.trim();
+    if (key.length < 20) {
+      throw new Error(translate('aiInvalidKey'));
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(`${MISTRAL_API_BASE}/models`, {
+        headers: { Authorization: `Bearer ${key}` },
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch {
+      throw new Error(translate('cannotReachMistral'));
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(translate('aiInvalidKey'));
+    }
+    if (!response.ok) {
+      throw new Error(translate('mistralServerUnavailable'));
+    }
+
+    const credentials: StoredCredentials = {
+      apiKey: key,
+      model,
+      key_last4: key.slice(-4),
+      connectedAt: Date.now(),
+    };
+    await this.persistCredentials(credentials);
+    this.connected = true;
+    this.config.model = model;
     // Un nouveau compte (ou modèle) invalide les réponses mises en cache.
     await this.clearCache();
-    return status;
+
+    return {
+      connected: true,
+      model,
+      key_last4: credentials.key_last4,
+      connected_at: new Date(credentials.connectedAt).toISOString(),
+    };
   }
 
-  /** Déconnecte le compte Mistral de l'utilisateur. */
+  /** Déconnecte le compte Mistral (supprime la clé stockée localement). */
   async disconnectAccount(): Promise<void> {
-    await this.credentialRequest('disconnect');
+    await this.removeCredentials();
+    this.connected = false;
     // Ne jamais servir de réponses IA mises en cache après une déconnexion.
     await this.clearCache();
   }
 
   /** Change le modèle utilisé (défaut : mistral-medium-latest). */
   async setModel(model: string): Promise<AIConnectionStatus> {
-    return this.credentialRequest('model', { model });
+    const credentials = await this.loadCredentials();
+    if (!credentials) {
+      throw new AINotConnectedError();
+    }
+    credentials.model = model;
+    await this.persistCredentials(credentials);
+    this.config.model = model;
+    await this.clearCache();
+    return {
+      connected: true,
+      model,
+      key_last4: credentials.key_last4,
+      connected_at: new Date(credentials.connectedAt).toISOString(),
+    };
   }
 
   getModel(): string {
@@ -324,8 +353,25 @@ class MistralAIService {
     }
   }
 
+  private extractErrorMessage(data: unknown, fallback: string): string {
+    if (data && typeof data === 'object') {
+      const record = data as Record<string, unknown>;
+      const error = record.error;
+      if (error && typeof error === 'object') {
+        const message = (error as Record<string, unknown>).message;
+        if (typeof message === 'string' && message.length > 0) {
+          return message;
+        }
+      }
+      if (typeof record.message === 'string' && record.message.length > 0) {
+        return record.message;
+      }
+    }
+    return fallback;
+  }
+
   /**
-   * Appel API générique avec retry et gestion d'erreurs
+   * Appel API Mistral direct avec gestion d'erreurs
    */
   private async callAPI(
     prompt: string,
@@ -354,11 +400,19 @@ class MistralAIService {
         throw new DOMException('Aborted', 'AbortError');
       }
 
+      const credentials = await this.loadCredentials();
+      if (!credentials?.apiKey) {
+        throw new AINotConnectedError();
+      }
+
       onProgress?.(20);
 
       const response = await fetch(this.config.baseURL, {
         method: 'POST',
-        headers: await this.authHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${credentials.apiKey}`,
+        },
         body: JSON.stringify({
           model: options?.model || this.config.model,
           messages: [
@@ -374,64 +428,53 @@ class MistralAIService {
       onProgress?.(60);
 
       const data = (await response.json().catch(() => ({}))) as {
-        data?: {
-          choices?: Array<{ message?: { content?: string } }>;
-          usage?: AIResponse['usage'];
-          error?: { message?: string };
+        choices?: Array<{ message?: { content?: string } }>;
+        usage?: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
         };
-        error?: { code?: string; message?: string };
       };
 
       if (!response.ok) {
-        if (response.status === 409 && data.error?.code === 'not_connected') {
-          throw new AINotConnectedError();
-        }
-        if (response.status === 401) {
-          throw new Error(
-            data.error?.code === 'unauthorized'
-              ? translate('aiAuthRequired')
-              : translate('mistralKeyInvalidOrExpired')
-          );
-        }
-
-        let errorMessage = '';
         switch (response.status) {
+          case 401:
+          case 403:
+            throw new Error(translate('mistralKeyInvalidOrExpired'));
           case 429:
-            errorMessage = translate('apiQuotaExceeded');
-            break;
+            throw new Error(translate('apiQuotaExceeded'));
           case 500:
           case 502:
           case 503:
-            errorMessage = translate('mistralServerUnavailable');
-            break;
+            throw new Error(translate('mistralServerUnavailable'));
           case 400:
-            errorMessage = translate('invalidRequest', {
-              message:
-                data.error?.message ||
-                data.data?.error?.message ||
-                translate('incorrectParameters'),
-            });
-            break;
+            throw new Error(
+              translate('invalidRequest', {
+                message: this.extractErrorMessage(data, translate('incorrectParameters')),
+              })
+            );
           default:
-            errorMessage =
-              data.error?.message ||
-              data.data?.error?.message ||
-              translate('apiErrorCode', { code: response.status });
+            throw new Error(
+              this.extractErrorMessage(data, translate('apiErrorCode', { code: response.status }))
+            );
         }
-        throw new Error(errorMessage);
       }
 
-      const content = data.data?.choices?.[0]?.message?.content || '';
+      const content = data.choices?.[0]?.message?.content || '';
       onProgress?.(80);
 
       await this.addToCache(cacheKey, prompt, content);
       onProgress?.(100);
 
-      return {
-        content,
-        usage: data.data?.usage,
-        cached: false,
-      };
+      const usage = data.usage
+        ? {
+            promptTokens: data.usage.prompt_tokens ?? 0,
+            completionTokens: data.usage.completion_tokens ?? 0,
+            totalTokens: data.usage.total_tokens ?? 0,
+          }
+        : undefined;
+
+      return { content, usage, cached: false };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error(translate('generationCancelled'));

@@ -360,7 +360,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     featureBrainstorming: 'Brainstorming and idea generation',
     privacy: 'Privacy:',
     privacyNote:
-      'Your notes are sent to Mistral AI only when using AI features. They are not stored by Mistral and are processed confidentially.',
+      'Your notes are sent directly to Mistral AI (api.mistral.ai) only when using AI features. Your key stays on your device; no JemaNote server sees these exchanges.',
     mistralKeyInvalidUnavailable:
       'The Mistral API key is invalid or expired. The AI service is temporarily unavailable.',
     cannotReachMistral:
@@ -371,10 +371,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     // AI account connection (per-user Mistral account)
     connectMistralAccount: 'Connect my Mistral account',
     mistralConnectDesc:
-      'Use your own Mistral account. Enter your key once: it is stored securely and never shown again.',
+      'Use your own Mistral account — no JemaNote account required. Paste your key once: it stays on this device and Mistral is called directly.',
     mistralApiKeyLabel: 'Mistral key',
     mistralApiKeyPlaceholder: 'Paste your Mistral key',
-    mistralApiKeyHelp: 'Your key is encrypted and will never be displayed again.',
+    mistralApiKeyHelp: 'Your key stays on this device and will never be displayed again.',
     connect: 'Connect',
     connecting: 'Connecting...',
     disconnectMistral: 'Disconnect',
@@ -800,7 +800,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     featureBrainstorming: "Brainstorming et génération d'idées",
     privacy: 'Confidentialité:',
     privacyNote:
-      "Vos notes sont envoyées à Mistral AI uniquement lors de l'utilisation des fonctionnalités IA. Elles ne sont pas stockées par Mistral et sont traitées de manière confidentielle.",
+      "Vos notes sont envoyées directement à Mistral AI (api.mistral.ai) uniquement lors de l'utilisation des fonctionnalités IA. Votre clé reste sur votre appareil ; aucun serveur JemaNote ne voit ces échanges.",
     mistralKeyInvalidUnavailable:
       'La clé API Mistral est invalide ou expirée. Le service IA est temporairement indisponible.',
     cannotReachMistral:
@@ -812,10 +812,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     // AI account connection (per-user Mistral account)
     connectMistralAccount: 'Connecter mon compte Mistral',
     mistralConnectDesc:
-      'Utilisez votre propre compte Mistral. Saisissez votre clé une seule fois : elle est stockée de façon sécurisée et n’est plus jamais affichée.',
+      'Utilisez votre propre compte Mistral — aucun compte JemaNote requis. Collez votre clé une seule fois : elle reste sur cet appareil et la connexion à Mistral se fait directement.',
     mistralApiKeyLabel: 'Clé Mistral',
     mistralApiKeyPlaceholder: 'Collez votre clé Mistral',
-    mistralApiKeyHelp: 'Votre clé est chiffrée et ne sera plus jamais affichée.',
+    mistralApiKeyHelp: 'Votre clé reste sur cet appareil et ne sera plus jamais affichée.',
     connect: 'Connecter',
     connecting: 'Connexion...',
     disconnectMistral: 'Déconnecter',

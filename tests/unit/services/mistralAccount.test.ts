@@ -1,17 +1,21 @@
 // Copyright (c) 2025 Jema Technology.
 // Distributed under the license specified in the root directory of this project.
 
+/**
+ * Unit tests for the LOCAL Mistral account API (no network, fetch stubbed).
+ *
+ * Focus: request shape to /v1/models, parsing of the locally stored status,
+ * invalid-key / unreachable / not-connected error mapping.
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import {
-  aiService,
-  AINotConnectedError,
-  AI_DEFAULT_MODEL,
-} from '@/services/ai/mistralService';
+import { aiService, AINotConnectedError, AI_DEFAULT_MODEL } from '@/services/ai/mistralService';
 import { translate } from '@/i18n/translations';
+import { mockLocalforage } from '@/tests/__mocks__/localStorage';
 
-const SUPABASE_URL = 'https://yadtnmgyrmigqbndnmho.supabase.co';
-const CREDENTIALS_BASE = `${SUPABASE_URL}/functions/v1/mistral-credentials`;
+const MODELS_URL = 'https://api.mistral.ai/v1/models';
+const TEST_API_KEY = 'sk-test-key-1234567890';
 
 /** Build a minimal fetch Response stub for the service under test. */
 function jsonResponse(status: number, body: unknown): Response {
@@ -22,10 +26,11 @@ function jsonResponse(status: number, body: unknown): Response {
   } as unknown as Response;
 }
 
-describe('mistralService per-user account API', () => {
+describe('mistralService local account API', () => {
   const mockFetch = vi.fn();
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await mockLocalforage.clear();
     mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
   });
@@ -37,129 +42,128 @@ describe('mistralService per-user account API', () => {
   const firstCall = (): [string, RequestInit] =>
     mockFetch.mock.calls[0] as unknown as [string, RequestInit];
 
-  const headersOf = (init: RequestInit): Record<string, string> =>
-    init.headers as Record<string, string>;
+  async function seedCredentials(model: string = AI_DEFAULT_MODEL): Promise<void> {
+    await mockLocalforage.setItem('mistral', {
+      apiKey: TEST_API_KEY,
+      model,
+      key_last4: TEST_API_KEY.slice(-4),
+      connectedAt: Date.now(),
+    });
+  }
 
-  it('getConnectionStatus parses the status and updates the cached model', async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse(200, {
-        connected: true,
-        model: 'mistral-large-latest',
-        key_last4: 'ab12',
-        connected_at: '2026-01-01T00:00:00Z',
-      })
-    );
+  it('getConnectionStatus parses stored credentials and updates the cached model', async () => {
+    await seedCredentials('mistral-large-latest');
 
     const status = await aiService.getConnectionStatus();
 
     expect(status.connected).toBe(true);
     expect(status.model).toBe('mistral-large-latest');
-    expect(status.key_last4).toBe('ab12');
+    expect(status.key_last4).toBe(TEST_API_KEY.slice(-4));
+    expect(status.connected_at).toBeTruthy();
     expect(aiService.getModel()).toBe('mistral-large-latest');
-
-    const [url] = firstCall();
-    expect(url).toBe(`${CREDENTIALS_BASE}/status`);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('connectAccount posts api_key and model with auth headers and returns the parsed status', async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse(200, {
-        connected: true,
-        model: 'mistral-small-latest',
-        key_last4: '1234',
-      })
-    );
+  it('getConnectionStatus reports a disconnected status when nothing is stored', async () => {
+    const status = await aiService.getConnectionStatus();
 
-    const status = await aiService.connectAccount('sk-test-123', 'mistral-small-latest');
+    expect(status).toEqual({
+      connected: false,
+      model: null,
+      key_last4: null,
+      connected_at: null,
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('connectAccount GETs /v1/models with a Bearer key and returns the connected status', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(200, { object: 'list', data: [] }));
+
+    const status = await aiService.connectAccount(TEST_API_KEY, 'mistral-small-latest');
 
     const [url, init] = firstCall();
-    expect(url).toBe(`${CREDENTIALS_BASE}/connect`);
-    expect(init.method).toBe('POST');
+    expect(url).toBe(MODELS_URL);
+    // GET request: no method set (or explicitly GET).
+    expect(init.method ?? 'GET').toBe('GET');
 
-    const body = JSON.parse(String(init.body)) as Record<string, unknown>;
-    expect(body.api_key).toBe('sk-test-123');
-    expect(body.model).toBe('mistral-small-latest');
-
-    const headers = headersOf(init);
-    expect(headers.apikey).toBeTruthy();
-    expect(headers.Authorization).toMatch(/^Bearer .+/);
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBe(`Bearer ${TEST_API_KEY}`);
 
     expect(status.connected).toBe(true);
     expect(status.model).toBe('mistral-small-latest');
-    expect(status.key_last4).toBe('1234');
+    expect(status.key_last4).toBe(TEST_API_KEY.slice(-4));
+    expect(aiService.isConfigured()).toBe(true);
   });
 
   it('connectAccount defaults to AI_DEFAULT_MODEL when no model is given', async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse(200, { connected: true, model: AI_DEFAULT_MODEL, key_last4: '0000' })
-    );
+    mockFetch.mockResolvedValueOnce(jsonResponse(200, { object: 'list', data: [] }));
 
-    await aiService.connectAccount('sk-default');
+    const status = await aiService.connectAccount(TEST_API_KEY);
 
-    const [, init] = firstCall();
-    const body = JSON.parse(String(init.body)) as Record<string, unknown>;
-    expect(body.model).toBe(AI_DEFAULT_MODEL);
+    expect(status.model).toBe(AI_DEFAULT_MODEL);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
-  it('connectAccount rejects with the invalid-key message on HTTP 400 invalid_key', async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse(400, { error: { code: 'invalid_key' } })
-    );
+  it('connectAccount rejects with the invalid-key message on HTTP 401', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(401, { error: { message: 'Unauthorized' } }));
 
-    await expect(aiService.connectAccount('bad-key')).rejects.toThrow(
-      translate('aiInvalidKey')
+    await expect(aiService.connectAccount(TEST_API_KEY)).rejects.toThrow(translate('aiInvalidKey'));
+  });
+
+  it('connectAccount rejects with the invalid-key message on HTTP 403', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(403, { error: { message: 'Forbidden' } }));
+
+    await expect(aiService.connectAccount(TEST_API_KEY)).rejects.toThrow(translate('aiInvalidKey'));
+  });
+
+  it('connectAccount rejects with cannotReachMistral when the request fails', async () => {
+    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    await expect(aiService.connectAccount(TEST_API_KEY)).rejects.toThrow(
+      translate('cannotReachMistral')
     );
   });
 
-  it('getConnectionStatus rejects with the auth-required message on HTTP 401', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(401, { error: { code: 'unauthorized' } }));
-
-    await expect(aiService.getConnectionStatus()).rejects.toThrow(
-      translate('aiAuthRequired')
-    );
+  it('connectAccount rejects a too-short key without calling Mistral', async () => {
+    await expect(aiService.connectAccount('short-key')).rejects.toThrow(translate('aiInvalidKey'));
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('disconnectAccount posts to the /disconnect endpoint', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(200, { connected: false }));
-
-    await aiService.disconnectAccount();
-
-    const [url, init] = firstCall();
-    expect(url).toBe(`${CREDENTIALS_BASE}/disconnect`);
-    expect(init.method).toBe('POST');
-  });
-
-  it('setModel posts the model and updates getModel()', async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse(200, {
-        connected: true,
-        model: 'mistral-large-latest',
-        key_last4: 'ffff',
-      })
-    );
+  it('setModel updates the persisted model', async () => {
+    // clearCache would otherwise wipe credentials under the shared mock store.
+    const clearSpy = vi.spyOn(aiService, 'clearCache').mockResolvedValue(undefined);
+    await seedCredentials('mistral-medium-latest');
 
     const status = await aiService.setModel('mistral-large-latest');
 
-    const [url, init] = firstCall();
-    expect(url).toBe(`${CREDENTIALS_BASE}/model`);
-    const body = JSON.parse(String(init.body)) as Record<string, unknown>;
-    expect(body.model).toBe('mistral-large-latest');
-
-    expect(status.model).toBe('mistral-large-latest');
+    expect(status).toMatchObject({ connected: true, model: 'mistral-large-latest' });
     expect(aiService.getModel()).toBe('mistral-large-latest');
+
+    const reread = await aiService.getConnectionStatus();
+    expect(reread.model).toBe('mistral-large-latest');
+
+    clearSpy.mockRestore();
   });
 
-  it('summarize rejects with AINotConnectedError when the proxy reports not_connected', async () => {
-    // Unique prompt: the localforage mock is a shared store and the cache
-    // compares the full prompt, so avoid colliding with any other test.
-    const uniquePrompt = '__mistral_account_test_unique_prompt_409__';
-
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse(409, { error: { code: 'not_connected' } })
-    );
-
-    await expect(aiService.summarize(uniquePrompt)).rejects.toBeInstanceOf(
+  it('setModel rejects with AINotConnectedError when nothing is stored', async () => {
+    await expect(aiService.setModel('mistral-small-latest')).rejects.toBeInstanceOf(
       AINotConnectedError
     );
+  });
+
+  it('disconnectAccount clears the stored connection', async () => {
+    await seedCredentials();
+
+    await aiService.disconnectAccount();
+
+    const status = await aiService.getConnectionStatus();
+    expect(status.connected).toBe(false);
+  });
+
+  it('summarize rejects with AINotConnectedError when no key is stored', async () => {
+    await expect(aiService.summarize('__unit_no_connection_prompt__')).rejects.toBeInstanceOf(
+      AINotConnectedError
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

@@ -92,15 +92,15 @@ npm run build
 Copiez le fichier `.env.example` vers `.env` et configurez les variables :
 
 ```env
-# Supabase (requis pour la connexion du compte Mistral et la synchro cloud)
+# Supabase (optionnel - pour la synchronisation cloud)
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-> **IA Mistral** : aucune clé n'est stockée côté client. Chaque utilisateur
-> connecte son propre compte Mistral depuis **Paramètres → Assistant IA**
-> (la clé est validée puis chiffrée côté Supabase Vault et n'est jamais
-> renvoyée au navigateur). Voir `supabase/README.md` pour déployer le backend.
+> **IA Mistral** : aucun compte ni clé côté serveur. Chaque utilisateur clique
+> **Paramètres → Assistant IA → « Connecter mon compte Mistral »**, colle sa clé
+> une seule fois ; elle reste **uniquement sur son appareil** (IndexedDB) et les
+> appels partent directement vers `api.mistral.ai`. Aucun compte JemaNote requis.
 
 ## 💻 Utilisation
 

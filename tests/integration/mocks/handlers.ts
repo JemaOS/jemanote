@@ -10,19 +10,17 @@ import { http, HttpResponse, delay } from 'msw';
 
 import type { Note, Folder, Tag, Link } from '@/types';
 
-// Mistral API Response Types
-interface MistralResponse {
-  data: {
-    choices: Array<{
-      message: {
-        content: string;
-      };
-    }>;
-    usage?: {
-      promptTokens: number;
-      completionTokens: number;
-      totalTokens: number;
+// Mistral API Response Types (native Mistral shape — NOT wrapped in `data`)
+interface MistralChatResponse {
+  choices: Array<{
+    message: {
+      content: string;
     };
+  }>;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
   };
 }
 
@@ -65,95 +63,106 @@ const createMockNote = (overrides?: Partial<Note>): Note => ({
   ...overrides,
 });
 
+// Mistral API base (direct, 100% local mode — no Supabase proxy)
+const MISTRAL_API_BASE = 'https://api.mistral.ai/v1';
+
 // Mistral API Handlers
 export const mistralHandlers = [
-  // Mistral Proxy Edge Function
-  http.post(
-    'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
-    async ({ request }) => {
-      const body = (await request.json()) as {
-        model?: string;
-        messages?: Array<{ role: string; content: string }>;
-        max_tokens?: number;
-        temperature?: number;
-      };
+  // List models — used by connectAccount() to validate the user's key locally.
+  http.get(`${MISTRAL_API_BASE}/models`, async () => {
+    await delay(50);
+    return HttpResponse.json({
+      object: 'list',
+      data: [
+        { id: 'mistral-small-latest', object: 'model' },
+        { id: 'mistral-medium-latest', object: 'model' },
+        { id: 'mistral-large-latest', object: 'model' },
+      ],
+    });
+  }),
 
-      // Simulate network delay
-      await delay(100);
+  // Chat completions — direct call to Mistral with the locally stored key.
+  http.post(`${MISTRAL_API_BASE}/chat/completions`, async ({ request }) => {
+    const body = (await request.json()) as {
+      model?: string;
+      messages?: Array<{ role: string; content: string }>;
+      max_tokens?: number;
+      temperature?: number;
+    };
 
-      const userMessage = body.messages?.find(m => m.role === 'user')?.content || '';
-      const systemMessage = body.messages?.find(m => m.role === 'system')?.content || '';
+    // Simulate network delay
+    await delay(100);
 
-      // Generate contextual responses based on prompts
-      let responseContent = '';
+    const userMessage = body.messages?.find(m => m.role === 'user')?.content || '';
+    const systemMessage = body.messages?.find(m => m.role === 'system')?.content || '';
 
-      if (
-        userMessage.toLowerCase().includes('résume') ||
-        userMessage.toLowerCase().includes('summary')
-      ) {
-        responseContent =
-          'Ceci est un résumé concis du texte fourni, mettant en avant les points clés.';
-      } else if (
-        userMessage.toLowerCase().includes('continue') ||
-        userMessage.toLowerCase().includes('texte à continuer')
-      ) {
-        responseContent =
-          'Voici la continuation naturelle et cohérente du texte, développant les idées présentées.';
-      } else if (
-        userMessage.toLowerCase().includes('améliore') ||
-        userMessage.toLowerCase().includes('improve')
-      ) {
-        responseContent =
-          'Voici une version améliorée, plus claire et mieux structurée du texte original.';
-      } else if (
-        userMessage.toLowerCase().includes('traduis') ||
-        userMessage.toLowerCase().includes('translate')
-      ) {
-        responseContent = 'This is the translated version of the provided text.';
-      } else if (
-        userMessage.toLowerCase().includes('tags') ||
-        systemMessage.toLowerCase().includes('tags')
-      ) {
-        responseContent = 'productivité, organisation, notes, idées, projet';
-      } else if (
-        userMessage.toLowerCase().includes('idées') ||
-        userMessage.toLowerCase().includes('brainstorming')
-      ) {
-        responseContent =
-          "Idée 1: Explorer de nouvelles approches\nIdée 2: Collaborer avec l'équipe\nIdée 3: Documenter les processus\nIdée 4: Automatiser les tâches répétitives\nIdée 5: Mesurer les résultats";
-      } else if (
-        userMessage.toLowerCase().includes('synthétise') ||
-        userMessage.toLowerCase().includes('synthesize')
-      ) {
-        responseContent = 'Synthèse des notes fournies en un document cohérent et structuré.';
-      } else {
-        responseContent = `Réponse générée par l'IA pour: ${userMessage.substring(0, 50)}`;
-      }
+    // Generate contextual responses based on prompts
+    let responseContent = '';
 
-      const response: MistralResponse = {
-        data: {
-          choices: [
-            {
-              message: {
-                content: responseContent,
-              },
-            },
-          ],
-          usage: {
-            promptTokens: userMessage.length / 4,
-            completionTokens: responseContent.length / 4,
-            totalTokens: (userMessage.length + responseContent.length) / 4,
+    if (
+      userMessage.toLowerCase().includes('résume') ||
+      userMessage.toLowerCase().includes('summary')
+    ) {
+      responseContent =
+        'Ceci est un résumé concis du texte fourni, mettant en avant les points clés.';
+    } else if (
+      userMessage.toLowerCase().includes('continue') ||
+      userMessage.toLowerCase().includes('texte à continuer')
+    ) {
+      responseContent =
+        'Voici la continuation naturelle et cohérente du texte, développant les idées présentées.';
+    } else if (
+      userMessage.toLowerCase().includes('améliore') ||
+      userMessage.toLowerCase().includes('improve')
+    ) {
+      responseContent =
+        'Voici une version améliorée, plus claire et mieux structurée du texte original.';
+    } else if (
+      userMessage.toLowerCase().includes('traduis') ||
+      userMessage.toLowerCase().includes('translate')
+    ) {
+      responseContent = 'This is the translated version of the provided text.';
+    } else if (
+      userMessage.toLowerCase().includes('tags') ||
+      systemMessage.toLowerCase().includes('tags')
+    ) {
+      responseContent = 'productivité, organisation, notes, idées, projet';
+    } else if (
+      userMessage.toLowerCase().includes('idées') ||
+      userMessage.toLowerCase().includes('brainstorming')
+    ) {
+      responseContent =
+        "Idée 1: Explorer de nouvelles approches\nIdée 2: Collaborer avec l'équipe\nIdée 3: Documenter les processus\nIdée 4: Automatiser les tâches répétitives\nIdée 5: Mesurer les résultats";
+    } else if (
+      userMessage.toLowerCase().includes('synthétise') ||
+      userMessage.toLowerCase().includes('synthesize')
+    ) {
+      responseContent = 'Synthèse des notes fournies en un document cohérent et structuré.';
+    } else {
+      responseContent = `Réponse générée par l'IA pour: ${userMessage.substring(0, 50)}`;
+    }
+
+    const response: MistralChatResponse = {
+      choices: [
+        {
+          message: {
+            content: responseContent,
           },
         },
-      };
+      ],
+      usage: {
+        prompt_tokens: Math.round(userMessage.length / 4),
+        completion_tokens: Math.round(responseContent.length / 4),
+        total_tokens: Math.round((userMessage.length + responseContent.length) / 4),
+      },
+    };
 
-      return HttpResponse.json(response);
-    }
-  ),
+    return HttpResponse.json(response);
+  }),
 
   // Rate limit error simulation
   http.post(
-    'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+    `${MISTRAL_API_BASE}/chat/completions`,
     async ({ request }) => {
       const body = (await request.json()) as { simulateError?: string };
 
@@ -168,7 +177,7 @@ export const mistralHandlers = [
 
   // Server error simulation
   http.post(
-    'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+    `${MISTRAL_API_BASE}/chat/completions`,
     async ({ request }) => {
       const body = (await request.json()) as { simulateError?: string };
 
@@ -183,7 +192,7 @@ export const mistralHandlers = [
 
   // Timeout simulation
   http.post(
-    'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+    `${MISTRAL_API_BASE}/chat/completions`,
     async ({ request }) => {
       const body = (await request.json()) as { simulateError?: string };
 
@@ -199,7 +208,7 @@ export const mistralHandlers = [
 
   // Unauthorized error simulation
   http.post(
-    'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+    `${MISTRAL_API_BASE}/chat/completions`,
     async ({ request }) => {
       const body = (await request.json()) as { simulateError?: string };
 

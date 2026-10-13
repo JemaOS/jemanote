@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   KeyRound,
   LogOut,
-  LogIn,
   ShieldCheck,
   Server,
   Eye,
@@ -24,21 +23,13 @@ import {
   type AIConnectionStatus,
 } from '@/services/ai/mistralService';
 
-interface AISettingsSectionProps {
-  readonly userId?: string | null;
-  readonly onRequestLogin?: () => void;
-}
-
 const EMPTY_STATUS: AIConnectionStatus = {
   connected: false,
   model: null,
   key_last4: null,
 };
 
-export default function AISettingsSection({
-  userId,
-  onRequestLogin,
-}: AISettingsSectionProps) {
+export default function AISettingsSection() {
   const { t } = useLanguage();
 
   const [status, setStatus] = useState<AIConnectionStatus>(EMPTY_STATUS);
@@ -86,13 +77,8 @@ export default function AISettingsSection({
   }, [loadStats]);
 
   useEffect(() => {
-    if (userId) {
-      void loadStatus();
-    } else {
-      setLoadingStatus(false);
-      setStatus(EMPTY_STATUS);
-    }
-  }, [userId, loadStatus]);
+    void loadStatus();
+  }, [loadStatus]);
 
   const handleConnect = async (event: FormEvent) => {
     event.preventDefault();
@@ -184,27 +170,6 @@ export default function AISettingsSection({
   };
 
   const renderStatus = () => {
-    if (!userId) {
-      return (
-        <div className="p-3 sm:p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-md space-y-3">
-          <div className="flex items-start gap-3">
-            <LogIn className="h-5 w-5 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" />
-            <p className="text-xs sm:text-sm text-primary-800 dark:text-neutral-200">
-              {t('aiAuthRequired')}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onRequestLogin}
-            className="w-full px-4 py-2.5 text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 rounded-md transition-colors flex items-center justify-center gap-2"
-          >
-            <LogIn className="w-4 h-4" />
-            {t('signIn')}
-          </button>
-        </div>
-      );
-    }
-
     if (loadingStatus) {
       return (
         <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
@@ -292,7 +257,7 @@ export default function AISettingsSection({
         )}
 
         {/* Connexion du compte Mistral de l'utilisateur */}
-        {userId && !status.connected && !loadingStatus && (
+        {!status.connected && !loadingStatus && (
           <form onSubmit={handleConnect} className="space-y-3" autoComplete="off">
             <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-600 dark:text-neutral-300">
               <KeyRound className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary-500" />
@@ -343,7 +308,7 @@ export default function AISettingsSection({
         )}
 
         {/* Sélecteur de modèle */}
-        {userId && (status.connected || !loadingStatus) && (
+        {(status.connected || !loadingStatus) && (
           <div>
             <label
               htmlFor="aiModel"

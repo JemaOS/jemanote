@@ -256,14 +256,7 @@ function App() {
           />
         );
       case 'settings':
-        return (
-          <SettingsView
-            userId={user?.id ?? null}
-            onRequestLogin={() => {
-              setShowAuthModal(true);
-            }}
-          />
-        );
+        return <SettingsView userId={user?.id ?? null} />;
       case 'canvas':
         return (
           <CanvasView

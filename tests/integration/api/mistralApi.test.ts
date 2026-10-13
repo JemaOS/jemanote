@@ -7,9 +7,10 @@
  */
 
 import { http, HttpResponse } from 'msw';
-import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 
 import { mistralService } from '@/services/ai/mistralService';
+import { mockLocalforage } from '@/tests/__mocks__/localStorage';
 
 // Setup MSW
 let server: ReturnType<typeof import('msw/node').setupServer>;
@@ -25,6 +26,28 @@ afterEach(() => {
 });
 afterAll(() => {
   server.close();
+});
+
+// The localforage mock is a single SHARED store: ai_credentials, ai_cache and
+// summary_history all point to the same object. We therefore reset it and
+// pre-seed a valid local connection before each test. Pre-seeding is required
+// because connectAccount() clears the cache right after persisting the key,
+// which under the shared mock also clears the credentials it just stored.
+const CHAT_URL = 'https://api.mistral.ai/v1/chat/completions';
+const TEST_API_KEY = 'sk-test-key-1234567890';
+
+async function seedConnection(): Promise<void> {
+  await mockLocalforage.setItem('mistral', {
+    apiKey: TEST_API_KEY,
+    model: 'mistral-medium-latest',
+    key_last4: TEST_API_KEY.slice(-4),
+    connectedAt: Date.now(),
+  });
+}
+
+beforeEach(async () => {
+  await mistralService.disconnectAccount(); // clears the shared store + connection flag
+  await seedConnection();
 });
 
 describe('Mistral API Integration', () => {
@@ -236,7 +259,7 @@ describe('Mistral API Integration', () => {
       // Override handler for this test
       server.use(
         http.post(
-          'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+          CHAT_URL,
           async () => {
             return HttpResponse.json(
               { error: { message: 'Rate limit exceeded' } },
@@ -252,7 +275,7 @@ describe('Mistral API Integration', () => {
     it('should handle server errors (500)', async () => {
       server.use(
         http.post(
-          'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+          CHAT_URL,
           async () => {
             return HttpResponse.json(
               { error: { message: 'Internal server error' } },
@@ -270,7 +293,7 @@ describe('Mistral API Integration', () => {
     it('should handle unauthorized errors (401)', async () => {
       server.use(
         http.post(
-          'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+          CHAT_URL,
           async () => {
             return HttpResponse.json({ error: { message: 'Invalid API key' } }, { status: 401 });
           }
@@ -285,7 +308,7 @@ describe('Mistral API Integration', () => {
     it('should handle bad request errors (400)', async () => {
       server.use(
         http.post(
-          'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+          CHAT_URL,
           async () => {
             return HttpResponse.json({ error: { message: 'Invalid parameters' } }, { status: 400 });
           }
@@ -298,7 +321,7 @@ describe('Mistral API Integration', () => {
     it('should handle service unavailable errors (503)', async () => {
       server.use(
         http.post(
-          'https://yadtnmgyrmigqbndnmho.supabase.co/functions/v1/mistral-proxy',
+          CHAT_URL,
           async () => {
             return HttpResponse.json(
               { error: { message: 'Service unavailable' } },
@@ -376,7 +399,10 @@ describe('Mistral API Integration', () => {
   });
 
   describe('Configuration', () => {
-    it('should always report as configured', () => {
+    it('should report as configured after connecting an account', async () => {
+      const status = await mistralService.connectAccount(TEST_API_KEY);
+
+      expect(status.connected).toBe(true);
       expect(mistralService.isConfigured()).toBe(true);
     });
 
