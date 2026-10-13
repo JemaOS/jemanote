@@ -18,6 +18,10 @@ export default defineConfig({
       injectRegister: false, // Don't auto-inject SW registration script - we register manually after page load
       workbox: {
         maximumFileSizeToCacheInBytes: 5000000,
+        // Take control of open pages immediately and reload them onto the new
+        // build, so a fresh deploy is never masked by the cached app shell.
+        clientsClaim: true,
+        skipWaiting: true,
       },
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {

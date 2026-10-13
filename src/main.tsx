@@ -25,8 +25,25 @@ createRoot(document.getElementById('root')!).render(
 // Register service worker after page load to avoid blocking initial render
 if ('serviceWorker' in navigator) {
   globalThis.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // SW registration failed - app still works without it
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then(registration => {
+        // Proactively check for a newer version on every load.
+        void registration.update();
+      })
+      .catch(() => {
+        // SW registration failed - app still works without it
+      });
+
+    // When a new service worker takes control, reload once so the page runs
+    // the freshly deployed build instead of the cached (old) app shell.
+    let hasReloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hasReloaded) {
+        return;
+      }
+      hasReloaded = true;
+      globalThis.location.reload();
     });
   });
 }
