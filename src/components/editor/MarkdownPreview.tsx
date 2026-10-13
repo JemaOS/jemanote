@@ -1,10 +1,12 @@
 // Copyright (c) 2025 Jema Technology.
 // Distributed under the license specified in the root directory of this project.
 
+import DOMPurify from 'dompurify';
 import React, { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
@@ -16,6 +18,37 @@ import 'katex/dist/katex.min.css';
 interface MarkdownPreviewProps {
   readonly content: string;
   readonly onWikiLinkClick?: (noteTitle: string) => void;
+}
+
+// SECURITY: sanitization schema applied to the HTML produced by rehypeRaw.
+// Keeps standard Markdown + our wiki-link spans while stripping scripts, event
+// handlers and dangerous URLs. `attachment:` is allowed because attachment
+// images/audio are resolved client-side from IndexedDB.
+const sanitizeSchema = {
+  ...defaultSchema,
+  protocols: {
+    ...defaultSchema.protocols,
+    src: [...(defaultSchema.protocols?.src ?? []), 'attachment'],
+  },
+  attributes: {
+    ...defaultSchema.attributes,
+    span: [...(defaultSchema.attributes?.span ?? []), 'className', 'dataNote'],
+    '*': [...(defaultSchema.attributes?.['*'] ?? []), 'className'],
+  },
+};
+
+// Only `attachment:` bypasses the default URL transform; everything else goes
+// through react-markdown's safe transform (strips javascript:, etc.).
+const safeUrlTransform = (url: string): string =>
+  url.startsWith('attachment:') ? url : defaultUrlTransform(url);
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 // Composant lecteur audio autonome
@@ -229,7 +262,7 @@ export default function MarkdownPreview({ content, onWikiLinkClick }: MarkdownPr
         mermaid.initialize({
           startOnLoad: false,
           theme: 'dark',
-          securityLevel: 'loose',
+          securityLevel: 'strict',
           fontFamily: 'Inter, system-ui, sans-serif',
         });
         mermaidInitialized = true;
@@ -251,7 +284,12 @@ export default function MarkdownPreview({ content, onWikiLinkClick }: MarkdownPr
           try {
             const { svg } = await mermaid.render(`mermaid-${i}-${Date.now()}`, code);
             element.style.display = 'none';
-            parent.insertAdjacentHTML('beforeend', svg);
+            // SECURITY: sanitize the SVG produced from user-controlled diagram
+            // source before injecting it into the DOM.
+            const cleanSvg = DOMPurify.sanitize(svg, {
+              USE_PROFILES: { svg: true, svgFilters: true },
+            });
+            parent.insertAdjacentHTML('beforeend', cleanSvg);
           } catch (error) {
             console.error('Erreur rendu Mermaid:', error);
             element.textContent = t('mermaidRenderError', { error: String(error) });
@@ -269,7 +307,8 @@ export default function MarkdownPreview({ content, onWikiLinkClick }: MarkdownPr
     const MAX_TEXT_LENGTH = 500000; // 500KB max
     const safeText = text.length > MAX_TEXT_LENGTH ? text.substring(0, MAX_TEXT_LENGTH) : text;
     return safeText.replaceAll(/\[\[([^\]]{1,200})\]\]/g, (match, noteTitle) => {
-      return `<span class="wiki-link" data-note="${noteTitle}">${noteTitle}</span>`;
+      const safeTitle = escapeHtml(noteTitle);
+      return `<span class="wiki-link" data-note="${safeTitle}">${safeTitle}</span>`;
     });
   };
 
@@ -306,8 +345,8 @@ export default function MarkdownPreview({ content, onWikiLinkClick }: MarkdownPr
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex, rehypeRaw]}
-        urlTransform={url => url} // Autoriser tous les protocoles (dont attachment:)
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex]}
+        urlTransform={safeUrlTransform}
         components={{
           img: MarkdownImg,
           audio: MarkdownAudio,

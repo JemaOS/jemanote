@@ -4,6 +4,16 @@
 import { RangeSetBuilder } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
 
+// Escape a value for safe interpolation into HTML (attribute or text).
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 // Parse wiki links in the document and add decorations
 function parseWikiLinks(view: EditorView) {
   const builder = new RangeSetBuilder<Decoration>();
@@ -80,7 +90,8 @@ export function renderWikiLinksToHTML(
     content.length > MAX_CONTENT_LENGTH ? content.substring(0, MAX_CONTENT_LENGTH) : content;
 
   return safeContent.replace(/\[\[([^\]]{1,200})\]\]/g, (match, linkText) => { // NOSONAR - safe pattern, negated char class with length limit
-    const escapedText = linkText.replaceAll('"', '"');
-    return `<a href="#" class="wiki-link" data-note-title="${escapedText}" style="color: #5a63e9; text-decoration: underline; font-weight: 500;">${linkText}</a>`;
+    // SECURITY: escape the link text before building HTML (attribute + body).
+    const escapedText = escapeHtml(linkText);
+    return `<a href="#" class="wiki-link" data-note-title="${escapedText}" style="color: #5a63e9; text-decoration: underline; font-weight: 500;">${escapedText}</a>`;
   });
 }

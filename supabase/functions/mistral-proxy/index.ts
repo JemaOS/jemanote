@@ -104,6 +104,12 @@ Deno.serve(async req => {
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
+  // Cheap pre-check: reject obviously unauthenticated calls before any
+  // Auth round-trip or client construction.
+  if (!/^Bearer\s+\S+/i.test(authHeader)) {
+    return errorResponse(cors, 401, 'unauthorized', 'Authentication required');
+  }
+
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return errorResponse(cors, 500, 'server_misconfigured', 'AI service is not configured');
   }
@@ -156,13 +162,19 @@ Deno.serve(async req => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: allowed } = await admin.rpc('ai_check_rate_limit', {
+  const { data: allowed, error: rateError } = await admin.rpc('ai_check_rate_limit', {
     p_user_id: user.id,
     p_limit: 120,
     p_window_seconds: 60,
   });
-  if (allowed === false) {
-    return errorResponse(cors, 429, 'rate_limited', 'Too many requests. Please slow down.');
+  // Fail closed: if the limiter itself errors, do not let the request through.
+  if (rateError || allowed !== true) {
+    return errorResponse(
+      cors,
+      rateError ? 503 : 429,
+      rateError ? 'rate_limit_unavailable' : 'rate_limited',
+      rateError ? 'Rate limiter unavailable' : 'Too many requests. Please slow down.'
+    );
   }
 
   const { data: apiKeyData, error: keyError } = await admin.rpc('ai_get_mistral_key', {
@@ -222,8 +234,14 @@ Deno.serve(async req => {
     }
 
     if (!upstream.ok) {
-      // Surface auth/quota errors to the client without leaking the key.
-      return jsonResponse({ data: payload }, cors, upstream.status);
+      // Do not relay the raw upstream body to the caller; return a generic,
+      // normalized error (no internal/upstream detail leakage).
+      return errorResponse(
+        cors,
+        upstream.status >= 500 ? 502 : 400,
+        'upstream_error',
+        'Mistral API error'
+      );
     }
 
     return jsonResponse({ data: payload }, cors);

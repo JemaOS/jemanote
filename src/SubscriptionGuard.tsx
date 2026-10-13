@@ -323,6 +323,9 @@ async function requestTokensFromPortal(): Promise<{
         resolve(empty);
       }, 2500);
       const onMessage = (event: MessageEvent) => {
+        if (event.source !== frameWindow) {
+          return;
+        }
         if (event.origin !== AUTH_PORTAL_URL) {
           return;
         }

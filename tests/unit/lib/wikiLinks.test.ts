@@ -216,12 +216,14 @@ describe('wikiLinks', () => {
       expect(result).toContain('>Wiki Link</a>');
     });
 
-    it('should handle special HTML characters in link text', () => {
+    it('should escape special HTML characters in link text', () => {
       const content = '[[Note with <script>alert("xss")</script>]]';
       const result = renderWikiLinksToHTML(content);
 
-      // The link text in the anchor should be preserved
-      expect(result).toContain('>Note with <script>alert("xss")</script></a>');
+      // SECURITY: the link text must be HTML-escaped, never injected raw.
+      expect(result).not.toContain('<script>');
+      expect(result).toContain('&lt;script&gt;');
+      expect(result).toContain('&quot;xss&quot;');
     });
   });
 
