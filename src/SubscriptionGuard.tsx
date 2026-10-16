@@ -736,11 +736,17 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
     width: '100%',
     padding: '0.7rem 0.9rem',
     borderRadius: '12px',
-    border: '1px solid rgba(79, 70, 229, 0.35)',
+    border: '1px solid #94a3b8',
     fontSize: '0.95rem',
     boxSizing: 'border-box',
-    background: '#ffffff',
+    background: '#f8fafc',
     color: '#0f172a',
+  };
+  const labelStyle: React.CSSProperties = {
+    textAlign: 'left',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    color: '#334155',
   };
 
   return (
@@ -748,12 +754,19 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
       onSubmit={event => {
         void handleSubmit(event);
       }}
-      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        width: '100%',
+        marginTop: '0.5rem',
+      }}
     >
+      <span style={labelStyle}>Compte Jema</span>
       <input
         type="email"
         required
-        placeholder="Email Jema"
+        placeholder="nom@exemple.com"
         autoComplete="username"
         value={email}
         onChange={event => {
@@ -761,10 +774,11 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
         }}
         style={inputStyle}
       />
+      <span style={labelStyle}>Mot de passe</span>
       <input
         type="password"
         required
-        placeholder="Mot de passe"
+        placeholder="••••••••"
         autoComplete="current-password"
         value={password}
         onChange={event => {
@@ -776,15 +790,16 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
         type="submit"
         disabled={busy}
         style={{
-          background: 'transparent',
-          color: '#4f46e5',
-          padding: '0.6rem 1.5rem',
+          background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+          color: '#ffffff',
+          padding: '0.7rem 1.5rem',
           borderRadius: '9999px',
           fontSize: '0.95rem',
           fontWeight: 600,
-          border: '1px solid rgba(79, 70, 229, 0.4)',
+          border: 'none',
           cursor: busy ? 'wait' : 'pointer',
           opacity: busy ? 0.6 : 1,
+          marginTop: '0.25rem',
         }}
       >
         {busy ? 'Connexion…' : 'Se connecter avec Jema'}
