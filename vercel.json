@@ -18,7 +18,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mistral.ai https://connect-api.jematech.fr https://auth-app.jematech.fr https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://auth-app.jematech.fr; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://js.hcaptcha.com https://newassets.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mistral.ai https://connect-api.jematech.fr https://auth-app.jematech.fr https://fonts.googleapis.com https://fonts.gstatic.com https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://auth-app.jematech.fr https://challenges.cloudflare.com https://newassets.hcaptcha.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
     }

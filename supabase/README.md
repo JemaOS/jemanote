@@ -11,6 +11,11 @@ never returned to the browser. The global/master key is no longer used.
 | `migrations/20261013120000_ai_credentials.sql` | Table `ai_credentials` (RLS deny-all) + Vault helpers, service-role only |
 | `functions/mistral-credentials/index.ts` | `status` / `connect` / `model` / `disconnect` |
 | `functions/mistral-proxy/index.ts` | Chat endpoint using the caller's own key |
+| `migrations/20261013140000_auth_guard.sql` | Rate limiting + suivi des échecs d'auth (anti-robot) |
+| `functions/auth-guard/index.ts` | Proxy connexion/inscription : rate limit + CAPTCHA à seuil |
+
+> **Anti-robot** : voir `SaaS-backend/docs/CAPTCHA.md` pour activer le CAPTCHA
+> gratuit (Cloudflare Turnstile) sur la connexion / inscription.
 
 ## Deploy
 

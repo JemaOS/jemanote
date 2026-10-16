@@ -12,3 +12,8 @@ verify_jwt = false
 
 [functions.mistral-credentials]
 verify_jwt = false
+
+# Anti-robot : connexion / inscription publiques (rate limit + CAPTCHA à seuil).
+# La vérification est faite DANS la fonction (pas de JWT requis à l'entrée).
+[functions.auth-guard]
+verify_jwt = false

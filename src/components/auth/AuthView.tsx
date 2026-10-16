@@ -4,6 +4,7 @@
 import { Mail, Lock } from 'lucide-react';
 import { useState } from 'react';
 
+import { CaptchaWidget, CAPTCHA_ENABLED } from '@/components/CaptchaWidget';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,6 +24,10 @@ export default function AuthView() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // CAPTCHA déclenché par le serveur au-delà du seuil anti-robot.
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +36,15 @@ export default function AuthView() {
 
     try {
       const { error: authError } = isLogin
-        ? await signIn(email, password)
-        : await signUp(email, password);
+        ? await signIn(email, password, captchaToken || undefined)
+        : await signUp(email, password, captchaToken || undefined);
 
       if (authError) {
+        if ((authError as { captchaRequired?: boolean }).captchaRequired) {
+          setCaptchaRequired(true);
+          setCaptchaToken('');
+          setCaptchaReset((n) => n + 1);
+        }
         setError(authError.message);
       }
     } catch {
@@ -140,6 +150,16 @@ export default function AuthView() {
               <div className="bg-error/10 border border-error text-error px-4 py-3 rounded-md text-body-small">
                 {error}
               </div>
+            )}
+
+            {captchaRequired && CAPTCHA_ENABLED && (
+              <CaptchaWidget
+                resetSignal={captchaReset}
+                theme="auto"
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken('')}
+                onError={() => setCaptchaToken('')}
+              />
             )}
 
             <button

@@ -39,5 +39,10 @@ supabase functions deploy mistral-credentials --no-verify-jwt
 echo "→ Deploying mistral-proxy"
 supabase functions deploy mistral-proxy --no-verify-jwt
 
+echo "→ Deploying auth-guard"
+supabase functions deploy auth-guard --no-verify-jwt
+
 echo "Done. Optionally lock CORS with:"
 echo '  supabase secrets set ALLOWED_ORIGINS="https://jemanote.app,http://localhost:5173"'
+echo 'To enable the anti-robot CAPTCHA (free, Cloudflare Turnstile):'
+echo '  supabase secrets set CAPTCHA_ENABLED="true" CAPTCHA_SECRET_KEY="<turnstile-secret>" CAPTCHA_ALLOWED_HOSTNAMES="jemanote.app"'
