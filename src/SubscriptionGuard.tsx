@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 
+import { connectWebLogin, persistConnectSession } from './connectSession';
 import { getVerifiedSignedEntitlement, storeSignedEntitlementFromServer } from './entitlementToken';
 
 // SubscriptionGuard v3 (2026-09-04)
@@ -702,6 +703,97 @@ function LockIcon() {
   );
 }
 
+function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (busy) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const result = await connectWebLogin(email, password);
+    if (result.accessToken !== undefined) {
+      persistConnectSession(result.accessToken, result.refreshToken ?? null);
+      if (onSuccess !== undefined) {
+        onSuccess();
+      }
+      return;
+    }
+    setError(
+      result.captchaRequired === true
+        ? 'Vérification anti-robot requise. Réessayez.'
+        : 'Connexion impossible. Vérifiez vos identifiants Jema.'
+    );
+    setBusy(false);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.7rem 0.9rem',
+    borderRadius: '12px',
+    border: '1px solid rgba(79, 70, 229, 0.35)',
+    fontSize: '0.95rem',
+    boxSizing: 'border-box',
+  };
+
+  return (
+    <form
+      onSubmit={event => {
+        void handleSubmit(event);
+      }}
+      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}
+    >
+      <input
+        type="email"
+        required
+        placeholder="Email Jema"
+        autoComplete="username"
+        value={email}
+        onChange={event => {
+          setEmail(event.target.value);
+        }}
+        style={inputStyle}
+      />
+      <input
+        type="password"
+        required
+        placeholder="Mot de passe"
+        autoComplete="current-password"
+        value={password}
+        onChange={event => {
+          setPassword(event.target.value);
+        }}
+        style={inputStyle}
+      />
+      <button
+        type="submit"
+        disabled={busy}
+        style={{
+          background: 'transparent',
+          color: '#4f46e5',
+          padding: '0.6rem 1.5rem',
+          borderRadius: '9999px',
+          fontSize: '0.95rem',
+          fontWeight: 600,
+          border: '1px solid rgba(79, 70, 229, 0.4)',
+          cursor: busy ? 'wait' : 'pointer',
+          opacity: busy ? 0.6 : 1,
+        }}
+      >
+        {busy ? 'Connexion…' : 'Se connecter avec Jema'}
+      </button>
+      {error !== null && (
+        <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: 0 }}>{error}</p>
+      )}
+    </form>
+  );
+}
+
 function UpgradeScreen({
   appName,
   onReconnect,
@@ -845,6 +937,7 @@ function UpgradeScreen({
                 {reconnecting ? t('reconnecting') : t('reconnect')}
               </button>
             )}
+            <WebLoginForm onSuccess={onReconnect} />
             {reconnectError && !reconnecting && !IS_SSO_HOST && (
               <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: 0 }}>
                 {t('reconnectFailed')}
