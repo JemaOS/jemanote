@@ -4,6 +4,7 @@
 import { Mail, Lock, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
+import { CaptchaWidget, CAPTCHA_ENABLED } from '@/components/CaptchaWidget';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -27,6 +28,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // CAPTCHA déclenché par le serveur (edge function `auth-guard`) au-delà du seuil.
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaReset, setCaptchaReset] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -48,10 +53,16 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
     try {
       const { error: authError } = isLogin
-        ? await signIn(email, password)
-        : await signUp(email, password);
+        ? await signIn(email, password, captchaToken || undefined)
+        : await signUp(email, password, captchaToken || undefined);
 
       if (authError) {
+        if ((authError as { captchaRequired?: boolean }).captchaRequired) {
+          // Token à usage unique : on affiche/réinitialise le widget.
+          setCaptchaRequired(true);
+          setCaptchaToken('');
+          setCaptchaReset(value => value + 1);
+        }
         setError(authError.message);
       } else {
         // Success - close the modal immediately and forcefully
@@ -190,6 +201,22 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             <div className="bg-error/10 border border-error text-error px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm">
               {error}
             </div>
+          )}
+
+          {captchaRequired && CAPTCHA_ENABLED && (
+            <CaptchaWidget
+              resetSignal={captchaReset}
+              theme="auto"
+              onVerify={token => {
+                setCaptchaToken(token);
+              }}
+              onExpire={() => {
+                setCaptchaToken('');
+              }}
+              onError={() => {
+                setCaptchaToken('');
+              }}
+            />
           )}
 
           <button

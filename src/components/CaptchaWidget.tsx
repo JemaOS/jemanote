@@ -40,8 +40,14 @@ const SCRIPTS: Record<CaptchaProvider, { url: string; id: string; globalName: 't
 
 const ENV = import.meta.env as Record<string, string | undefined>;
 
-export const CAPTCHA_ENABLED = ENV.VITE_CAPTCHA_ENABLED === 'true';
-export const CAPTCHA_SITE_KEY = ENV.VITE_CAPTCHA_SITE_KEY ?? '';
+// Clé de SITE publique (Cloudflare Turnstile) — surchargeable par
+// VITE_CAPTCHA_SITE_KEY. Ce n'est PAS un secret (elle est de toute façon
+// exposée dans le bundle) ; sa présence en défaut garantit que le widget
+// s'affiche même si l'env n'est pas injectée au build.
+const DEFAULT_CAPTCHA_SITE_KEY = '0x4AAAAAAFYbIgdy41K_uPQL';
+export const CAPTCHA_SITE_KEY = ENV.VITE_CAPTCHA_SITE_KEY || DEFAULT_CAPTCHA_SITE_KEY;
+// Activé par défaut ; désactivable explicitement avec VITE_CAPTCHA_ENABLED=false.
+export const CAPTCHA_ENABLED = (ENV.VITE_CAPTCHA_ENABLED ?? 'true') !== 'false';
 const CAPTCHA_PROVIDER = (ENV.VITE_CAPTCHA_PROVIDER as CaptchaProvider) || 'turnstile';
 
 const loadScript = (url: string, id: string): Promise<void> =>
