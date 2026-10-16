@@ -59,7 +59,6 @@ Ceci est un paragraphe avec du **texte en gras** et du *texte en italique*.
 
 \`\`\`javascript
 const x = 1;
-console.log(x);
 \`\`\`
 
 > Citation importante

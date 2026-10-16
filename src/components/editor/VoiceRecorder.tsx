@@ -154,8 +154,6 @@ export default function VoiceRecorder({
         },
       });
 
-      console.log('Stream audio obtenu:', stream.getAudioTracks()[0].getSettings());
-
       // Vérifier les formats supportés
       const supportedTypes = [
         'audio/webm',
@@ -169,7 +167,6 @@ export default function VoiceRecorder({
       for (const type of supportedTypes) {
         if (MediaRecorder.isTypeSupported(type)) {
           selectedType = type;
-          console.log('Format audio sélectionné:', type);
           break;
         }
       }
@@ -178,8 +175,6 @@ export default function VoiceRecorder({
         mimeType: selectedType,
         audioBitsPerSecond: 128000,
       });
-
-      console.log('MediaRecorder créé avec:', mediaRecorder.mimeType);
 
       // Analyser audio pour waveform
       const audioContext = new AudioContext();
@@ -194,25 +189,17 @@ export default function VoiceRecorder({
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = event => {
-        console.log('Chunk audio reçu:', event.data.size, 'bytes');
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        console.log('Arrêt enregistrement - nombre de chunks:', audioChunksRef.current.length);
-        console.log(
-          'Taille totale:',
-          audioChunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0),
-          'bytes'
-        );
 
         // Essayer différents types MIME pour compatibilité
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
 
         const blob = new Blob(audioChunksRef.current, { type: mimeType });
-        console.log('Audio blob créé:', blob.size, 'bytes, type:', mimeType);
 
         if (blob.size === 0) {
           console.error('ERREUR: Le blob audio est vide! Aucune donnée enregistrée.');
@@ -223,7 +210,6 @@ export default function VoiceRecorder({
         setAudioBlob(blob);
         setIsRecording(false);
         stream.getTracks().forEach(track => {
-          console.log('Arrêt du track:', track.label);
           track.stop();
         });
 
@@ -236,16 +222,13 @@ export default function VoiceRecorder({
       };
 
       mediaRecorder.start(100); // Capturer des chunks toutes les 100ms
-      console.log('Enregistrement démarré');
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
 
       if (recognitionRef.current) {
         try {
           recognitionRef.current.start();
-          console.log('Reconnaissance vocale démarrée');
         } catch (e) {
-          console.log('Erreur démarrage reconnaissance:', e);
         }
       }
 

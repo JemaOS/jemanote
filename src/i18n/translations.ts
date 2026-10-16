@@ -418,7 +418,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // VoiceRecorder
     speechNotSupported:
-      'Speech recognition is not supported. Please use Chrome, Edge or Safari and allow the microphone.',
+      'Speech recognition is not supported. Please use JemaOS, Edge or Safari and allow the microphone.',
     speakIntoMic: 'Speak into the microphone...',
     stop: 'Stop',
     transcription: 'Transcription',
@@ -859,7 +859,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // VoiceRecorder
     speechNotSupported:
-      "La reconnaissance vocale n'est pas supportée. Veuillez utiliser Chrome, Edge ou Safari et autoriser le microphone.",
+      "La reconnaissance vocale n'est pas supportée. Veuillez utiliser JemaOS, Edge ou Safari et autoriser le microphone.",
     speakIntoMic: 'Parlez dans le micro...',
     stop: 'Arrêter',
     transcription: 'Transcription',

@@ -213,7 +213,6 @@ Ceci est un document de démonstration montrant toutes les capacités de l'édit
 
 \`\`\`javascript
 function hello() {
-  console.log('Hello, World!');
 }
 \`\`\`
 

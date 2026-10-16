@@ -55,7 +55,6 @@ export function configurePerformance(userConfig: PerformanceConfig): void {
  */
 function debugLog(...args: unknown[]): void {
   if (config.debug) {
-    console.log('[Performance]', ...args);
   }
 }
 
