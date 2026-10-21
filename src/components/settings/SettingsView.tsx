@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Jema Technology.
 // Distributed under the license specified in the root directory of this project.
 
-import { Palette, Type, Cloud, Moon, Sun, Keyboard } from 'lucide-react';
+import { Palette, Type, Cloud, Moon, Sun, Monitor, Keyboard } from 'lucide-react';
 
 import AISettingsSection from '@/components/ai/AISettingsSection';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,7 +12,7 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ userId }: SettingsViewProps) {
-  const { theme, setTheme } = useTheme();
+  const { mode, setTheme } = useTheme();
   const { t } = useLanguage();
 
   return (
@@ -38,13 +38,26 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                 >
                   {t('theme')}
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => {
+                      setTheme('system');
+                    }}
+                    className={`flex items-center gap-2 p-4 border-2 rounded-lg transition-all ${
+                      mode === 'system'
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                        : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300'
+                    }`}
+                  >
+                    <Monitor className="h-5 w-5" />
+                    <span className="font-medium">{t('system')}</span>
+                  </button>
                   <button
                     onClick={() => {
                       setTheme('light');
                     }}
                     className={`flex items-center gap-2 p-4 border-2 rounded-lg transition-all ${
-                      theme === 'light'
+                      mode === 'light'
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300'
                     }`}
@@ -57,7 +70,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                       setTheme('dark');
                     }}
                     className={`flex items-center gap-2 p-4 border-2 rounded-lg transition-all ${
-                      theme === 'dark'
+                      mode === 'dark'
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300'
                     }`}

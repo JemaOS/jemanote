@@ -60,18 +60,22 @@
         background-color: inherit;
       }
     </style>
-    <!-- Theme init: apply dark class before React loads to prevent flash -->
+    <!-- Theme init: resolve system/light/dark before React loads to prevent flash -->
     <script>
       (function() {
         try {
-          var theme = localStorage.getItem('jemanote-theme');
-          if (theme === 'dark') {
+          var mode = localStorage.getItem('jemanote-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = mode === 'dark' || ((!mode || mode === 'system') && prefersDark);
+          if (dark) {
             document.documentElement.classList.add('dark');
             document.documentElement.style.backgroundColor = '#171717';
             document.body && (document.body.style.backgroundColor = '#171717');
           } else {
             document.documentElement.style.backgroundColor = '#FAFAFA';
+            document.body && (document.body.style.backgroundColor = '#FAFAFA');
           }
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
         } catch (e) {}
       })();
     </script>
