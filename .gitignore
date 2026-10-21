@@ -65,3 +65,5 @@ storybook-static/
 *.tsbuildinfo
 .vercel
 .env*.local
+
+supabase/.temp/

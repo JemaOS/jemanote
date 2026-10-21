@@ -54,6 +54,10 @@ const applyTheme = (resolved: ResolvedTheme) => {
     document.body.style.backgroundColor =
       resolved === 'dark' ? '#171717' : '#FAFAFA';
   }
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) {
+    themeColor.setAttribute('content', resolved === 'dark' ? '#171717' : '#FAFAFA');
+  }
 };
 
 export function ThemeProvider({ children }: { readonly children: React.ReactNode }) {
