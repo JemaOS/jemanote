@@ -19,6 +19,10 @@
 
 [Features](#-features) · [Screenshots](#-screenshots) · [Getting started](#-getting-started) · [Tech stack](#-tech-stack) · [License](#-license)
 
+<br>
+
+<sub>**Keywords:** markdown notes · note-taking app · second brain · knowledge graph · wiki-links · zettelkasten · PKM · personal knowledge management · offline notes · local-first · canvas · Mermaid · KaTeX · AI writing assistant · Mistral · Supabase sync · CodeMirror · Cytoscape · PixiJS · PWA · React · TypeScript</sub>
+
 </div>
 
 ![JemaNote — notes workspace](screenshots/main.png)
@@ -77,6 +81,12 @@ JemaNote is a note-taking **Progressive Web App** built by [Jema Technology](htt
 |                           Light                           |                             Dark                              |
 | :-------------------------------------------------------: | :-----------------------------------------------------------: |
 | <img src="screenshots/main.png" alt="JemaNote — light" /> | <img src="screenshots/main-dark.png" alt="JemaNote — dark" /> |
+
+### Editor & Command palette
+
+| Markdown editor | Command palette (`Ctrl/Cmd + K`) |
+| :---: | :---: |
+| <img src="screenshots/editor.png" alt="JemaNote — Markdown editor with live preview" /> | <img src="screenshots/command-palette.png" alt="JemaNote — command palette" /> |
 
 <p align="center">
   <img src="screenshots/settings.png" width="880" alt="JemaNote settings" />
