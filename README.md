@@ -74,9 +74,11 @@ JemaNote is a note-taking **Progressive Web App** built by [Jema Technology](htt
 
 ## 📸 Screenshots
 
+|                           Light                           |                             Dark                              |
+| :-------------------------------------------------------: | :-----------------------------------------------------------: |
+| <img src="screenshots/main.png" alt="JemaNote — light" /> | <img src="screenshots/main-dark.png" alt="JemaNote — dark" /> |
+
 <p align="center">
-  <img src="screenshots/main.png" width="880" alt="JemaNote workspace" />
-  <br />
   <img src="screenshots/settings.png" width="880" alt="JemaNote settings" />
 </p>
 
