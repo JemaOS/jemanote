@@ -80,8 +80,25 @@ export function ThemeProvider({ children }: { readonly children: React.ReactNode
       applyTheme(next);
     };
 
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
+    // `MediaQueryList.addEventListener` n'existe pas sur les anciens WebKit
+    // (Safari ≤ 13, iOS ≤ 12 — dont l'iPhone 6) ni dans certains environnements
+    // de test : on retombe sur l'API historique addListener/removeListener,
+    // et on n'abonne rien si aucune des deux n'est disponible.
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', onChange);
+      return () => {
+        media.removeEventListener('change', onChange);
+      };
+    }
+    if (typeof media.addListener === 'function') {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- API historique requise sur les anciens WebKit (iOS <= 12)
+      media.addListener(onChange);
+      return () => {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- idem ci-dessus
+        media.removeListener(onChange);
+      };
+    }
+    return undefined;
   }, [mode]);
 
   const handleSetTheme = useCallback((nextMode: ThemeMode) => {
