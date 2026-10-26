@@ -17,13 +17,13 @@ export default function SettingsView({ userId }: SettingsViewProps) {
 
   return (
     <div className="h-full bg-surface-bg dark:bg-neutral-900 overflow-auto">
-      <div className="max-w-4xl mx-auto p-8">
-        <h2 className="text-title font-bold text-neutral-900 dark:text-neutral-100 mb-8">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        <h2 className="text-title font-bold text-neutral-900 dark:text-neutral-100 mb-6 sm:mb-8">
           {t('settingsTitle')}
         </h2>
 
         <div className="space-y-6">
-          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <Palette className="h-6 w-6 text-primary-500" />
               <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
@@ -38,52 +38,58 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                 >
                   {t('theme')}
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   <button
                     onClick={() => {
                       setTheme('system');
                     }}
-                    className={`flex items-center gap-2 p-4 border-2 rounded-lg transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1 sm:flex-row sm:gap-2 p-3 sm:p-4 border-2 rounded-lg transition-all min-w-0 ${
                       mode === 'system'
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300'
                     }`}
                   >
-                    <Monitor className="h-5 w-5" />
-                    <span className="font-medium">{t('system')}</span>
+                    <Monitor className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base whitespace-nowrap">
+                      {t('system')}
+                    </span>
                   </button>
                   <button
                     onClick={() => {
                       setTheme('light');
                     }}
-                    className={`flex items-center gap-2 p-4 border-2 rounded-lg transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1 sm:flex-row sm:gap-2 p-3 sm:p-4 border-2 rounded-lg transition-all min-w-0 ${
                       mode === 'light'
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300'
                     }`}
                   >
-                    <Sun className="h-5 w-5" />
-                    <span className="font-medium">{t('light')}</span>
+                    <Sun className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base whitespace-nowrap">
+                      {t('light')}
+                    </span>
                   </button>
                   <button
                     onClick={() => {
                       setTheme('dark');
                     }}
-                    className={`flex items-center gap-2 p-4 border-2 rounded-lg transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1 sm:flex-row sm:gap-2 p-3 sm:p-4 border-2 rounded-lg transition-all min-w-0 ${
                       mode === 'dark'
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300'
                     }`}
                   >
-                    <Moon className="h-5 w-5" />
-                    <span className="font-medium">{t('dark')}</span>
+                    <Moon className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base whitespace-nowrap">
+                      {t('dark')}
+                    </span>
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <Type className="h-6 w-6 text-primary-500" />
               <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
@@ -91,10 +97,10 @@ export default function SettingsView({ userId }: SettingsViewProps) {
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="lineNumbers"
-                  className="text-body text-neutral-700 dark:text-neutral-300"
+                  className="text-body text-neutral-700 dark:text-neutral-300 min-w-0"
                 >
                   {t('lineNumbers')}
                 </label>
@@ -102,13 +108,13 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                   id="lineNumbers"
                   type="checkbox"
                   defaultChecked
-                  className="h-5 w-5 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
+                  className="h-5 w-5 flex-shrink-0 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="autoSave"
-                  className="text-body text-neutral-700 dark:text-neutral-300"
+                  className="text-body text-neutral-700 dark:text-neutral-300 min-w-0"
                 >
                   {t('autoSave')}
                 </label>
@@ -116,27 +122,27 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                   id="autoSave"
                   type="checkbox"
                   defaultChecked
-                  className="h-5 w-5 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
+                  className="h-5 w-5 flex-shrink-0 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="vimMode"
-                  className="text-body text-neutral-700 dark:text-neutral-300"
+                  className="text-body text-neutral-700 dark:text-neutral-300 min-w-0"
                 >
                   {t('vimMode')}
                 </label>
                 <input
                   id="vimMode"
                   type="checkbox"
-                  className="h-5 w-5 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
+                  className="h-5 w-5 flex-shrink-0 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Raccourcis clavier */}
-          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <Keyboard className="h-6 w-6 text-primary-500" />
               <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
@@ -158,16 +164,18 @@ export default function SettingsView({ userId }: SettingsViewProps) {
               ].map(({ keys, description }) => (
                 <div
                   key={description}
-                  className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
+                  className="flex items-center justify-between gap-3 py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                 >
-                  <span className="text-body text-neutral-700 dark:text-neutral-300">
+                  <span className="text-body text-neutral-700 dark:text-neutral-300 min-w-0">
                     {description}
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     {keys.map((key, index) => (
                       <span key={key} className="flex items-center gap-1">
                         {index > 0 && (
-                          <span className="text-caption text-neutral-400 dark:text-neutral-500">+</span>
+                          <span className="text-caption text-neutral-400 dark:text-neutral-500">
+                            +
+                          </span>
                         )}
                         <kbd className="px-2 py-1 text-caption font-mono bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded shadow-sm text-neutral-700 dark:text-neutral-300">
                           {key}
@@ -183,8 +191,8 @@ export default function SettingsView({ userId }: SettingsViewProps) {
           {/* Configuration IA */}
           <AISettingsSection />
 
-          {userId && (
-            <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+          {Boolean(userId) && (
+            <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Cloud className="h-6 w-6 text-primary-500" />
                 <h3 className="text-subtitle font-semibold text-neutral-900 dark:text-neutral-100">
@@ -192,10 +200,10 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                 </h3>
               </div>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <label
                     htmlFor="syncEnabled"
-                    className="text-body text-neutral-700 dark:text-neutral-300"
+                    className="text-body text-neutral-700 dark:text-neutral-300 min-w-0"
                   >
                     {t('syncEnabledLabel')}
                   </label>
@@ -203,7 +211,7 @@ export default function SettingsView({ userId }: SettingsViewProps) {
                     id="syncEnabled"
                     type="checkbox"
                     defaultChecked
-                    className="h-5 w-5 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
+                    className="h-5 w-5 flex-shrink-0 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 <div>
