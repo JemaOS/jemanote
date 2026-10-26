@@ -11,9 +11,9 @@ import { render, screen } from '@/tests/utils/test-utils';
 
 // Mock useAuth hook
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({
+  useAuth: vi.fn(() => ({
     signOut: vi.fn().mockResolvedValue(undefined),
-  }),
+  })),
 }));
 
 describe('Navigation', () => {

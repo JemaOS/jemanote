@@ -121,6 +121,14 @@ Object.defineProperty(navigator, 'language', {
   value: 'fr-FR',
 });
 
+// The language detection also looks at navigator.languages: keep it French too,
+// otherwise tests end up rendering in English and French text queries fail.
+Object.defineProperty(navigator, 'languages', {
+  writable: true,
+  configurable: true,
+  value: ['fr-FR', 'fr'],
+});
+
 // Mock navigator.onLine
 Object.defineProperty(navigator, 'onLine', {
   writable: true,
@@ -221,5 +229,36 @@ Object.defineProperty(globalThis, 'TransformStream', {
   writable: true,
   value: TransformStreamMock,
 });
+
+// Polyfill Element.scrollIntoView, missing from jsdom
+if (typeof Element !== 'undefined' && typeof Element.prototype.scrollIntoView !== 'function') {
+  Element.prototype.scrollIntoView = function scrollIntoView() {};
+}
+
+// Polyfill HTMLDialogElement methods missing from jsdom (showModal/show/close)
+if (typeof HTMLDialogElement !== 'undefined') {
+  const proto = HTMLDialogElement.prototype as HTMLDialogElement & {
+    showModal?: () => void;
+    show?: () => void;
+    close?: (returnValue?: string) => void;
+  };
+  if (typeof proto.showModal !== 'function') {
+    proto.showModal = function showModal(this: HTMLDialogElement) {
+      this.open = true;
+    };
+  }
+  if (typeof proto.show !== 'function') {
+    proto.show = function show(this: HTMLDialogElement) {
+      this.open = true;
+    };
+  }
+  if (typeof proto.close !== 'function') {
+    proto.close = function close(this: HTMLDialogElement, returnValue?: string) {
+      this.open = false;
+      this.returnValue = returnValue ?? '';
+      this.dispatchEvent(new Event('close'));
+    };
+  }
+}
 
 console.log('[SETUP] Test setup loaded successfully');

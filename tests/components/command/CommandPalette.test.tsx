@@ -11,7 +11,8 @@ import { render, screen } from '@/tests/utils/test-utils';
 
 // Mock ThemeContext
 vi.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }),
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useTheme: () => ({ theme: 'light', mode: 'light', toggleTheme: vi.fn(), setTheme: vi.fn() }),
 }));
 
 describe('CommandPalette', () => {

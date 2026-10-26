@@ -10,10 +10,10 @@ import { render, screen, waitFor } from '@/tests/utils/test-utils';
 
 // Mock useAuth hook
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({
+  useAuth: vi.fn(() => ({
     signIn: vi.fn().mockResolvedValue({ error: null }),
     signUp: vi.fn().mockResolvedValue({ error: null }),
-  }),
+  })),
 }));
 
 describe('AuthView', () => {
