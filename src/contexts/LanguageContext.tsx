@@ -20,15 +20,51 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const LANG_STORAGE_KEY = 'jemaos_lang';
+
+// Langue initiale : choix persisté de l'utilisateur, sinon langue du
+// navigateur/système (en ou fr), sinon anglais. Les PWA suivent donc la
+// langue du système/navigateur par défaut.
+function detectInitialLang(): Lang {
+  try {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    if (saved === 'en' || saved === 'fr') {
+      return saved;
+    }
+  } catch {
+    /* stockage indisponible */
+  }
+  try {
+    const candidates: readonly string[] =
+      navigator.languages.length > 0 ? navigator.languages : [navigator.language];
+    for (const candidate of candidates) {
+      const short = candidate.toLowerCase().split('-')[0];
+      if (short === 'en' || short === 'fr') {
+        return short;
+      }
+    }
+  } catch {
+    /* navigator indisponible */
+  }
+  return 'en';
+}
+
 export function LanguageProvider({ children }: { readonly children: React.ReactNode }) {
-  // French by default for JemaOS PWAs; the selector is a session-only
-  // override (never persisted).
-  const [lang, setLangState] = useState<Lang>('fr');
+  const [lang, setLangState] = useState<Lang>(detectInitialLang);
 
   useEffect(() => {
     document.documentElement.lang = lang;
     setI18nLang(lang);
   }, [lang]);
+
+  const setLang = useCallback((l: Lang) => {
+    setLangState(l);
+    try {
+      localStorage.setItem(LANG_STORAGE_KEY, l);
+    } catch {
+      /* stockage indisponible */
+    }
+  }, []);
 
   const t = useCallback(
     (key: string, params?: TranslationParams) => {
@@ -43,14 +79,13 @@ export function LanguageProvider({ children }: { readonly children: React.ReactN
     [lang]
   );
 
-  const value = useMemo(
-    () => ({ lang, setLang: setLangState, t, locale: localeFor(lang) }),
-    [lang, t]
-  );
+  const value = useMemo(() => ({ lang, setLang, t, locale: localeFor(lang) }), [lang, t, setLang]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
+// Le provider et le hook cohabitent volontairement dans ce fichier.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {

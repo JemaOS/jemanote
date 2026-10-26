@@ -706,11 +706,12 @@ function LockIcon() {
 // --- CAPTCHA (Cloudflare Turnstile) --------------------------------------
 // Anti-robot a seuil sur le login web (/v1/connect/login). La cle de SITE est
 // publique ; surchargeable par VITE_CAPTCHA_SITE_KEY (defaut ci-dessous).
-const CAPTCHA_SITE_KEY =
-  (import.meta.env.VITE_CAPTCHA_SITE_KEY as string | undefined) ||
-  '0x4AAAAAAFYbIgdy41K_uPQL';
-const TURNSTILE_SCRIPT =
-  'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+const captchaSiteKeyEnv = import.meta.env.VITE_CAPTCHA_SITE_KEY as string | undefined;
+const CAPTCHA_SITE_KEY: string =
+  captchaSiteKeyEnv !== undefined && captchaSiteKeyEnv !== ''
+    ? captchaSiteKeyEnv
+    : '0x4AAAAAAFYbIgdy41K_uPQL';
+const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
 interface TurnstileApi {
   render: (el: HTMLElement, opts: Record<string, unknown>) => string;
@@ -731,20 +732,26 @@ function loadTurnstileScript(): Promise<boolean> {
     return turnstileScriptPromise;
   }
   turnstileScriptPromise = new Promise<boolean>(resolve => {
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[src="${TURNSTILE_SCRIPT}"]`
-    );
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${TURNSTILE_SCRIPT}"]`);
     if (existing !== null) {
-      existing.addEventListener('load', () => resolve(true));
-      existing.addEventListener('error', () => resolve(false));
+      existing.addEventListener('load', () => {
+        resolve(true);
+      });
+      existing.addEventListener('error', () => {
+        resolve(false);
+      });
       return;
     }
     const script = document.createElement('script');
     script.src = TURNSTILE_SCRIPT;
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.onload = () => {
+      resolve(true);
+    };
+    script.onerror = () => {
+      resolve(false);
+    };
     document.head.appendChild(script);
   });
   return turnstileScriptPromise;
@@ -802,6 +809,7 @@ function TurnstileWidget({
 }
 
 function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -836,11 +844,11 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
       setCaptchaRequired(true);
       setCaptchaToken('');
       setCaptchaReset(value => value + 1);
-      setError('Vérification anti-robot requise. Validez le CAPTCHA et réessayez.');
+      setError(t('loginErrorCaptchaTurnstile'));
       setBusy(false);
       return;
     }
-    setError('Connexion impossible. Vérifiez vos identifiants Jema.');
+    setError(t('loginErrorGeneric'));
     setBusy(false);
   };
 
@@ -874,11 +882,11 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
         marginTop: '0.5rem',
       }}
     >
-      <span style={labelStyle}>Compte Jema</span>
+      <span style={labelStyle}>{t('loginAccountLabel')}</span>
       <input
         type="email"
         required
-        placeholder="nom@exemple.com"
+        placeholder={t('loginAccountPlaceholder')}
         autoComplete="username"
         value={email}
         onChange={event => {
@@ -886,7 +894,7 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
         }}
         style={inputStyle}
       />
-      <span style={labelStyle}>Mot de passe</span>
+      <span style={labelStyle}>{t('loginPasswordLabel')}</span>
       <input
         type="password"
         required
@@ -922,7 +930,7 @@ function WebLoginForm({ onSuccess }: { onSuccess?: () => void }) {
           marginTop: '0.25rem',
         }}
       >
-        {busy ? 'Connexion…' : 'Se connecter avec Jema'}
+        {busy ? t('loginSubmitting') : t('loginSubmit')}
       </button>
       {error !== null && (
         <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: 0 }}>{error}</p>

@@ -190,8 +190,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // CanvasView
     deleteCanvasSelectionConfirm:
       'Do you want to delete {count} item(s) from the canvas and move the {noteCount} note(s) to the trash?',
-    deleteCanvasNoteConfirm:
-      'Do you want to delete the original note and move it to the trash?',
+    deleteCanvasNoteConfirm: 'Do you want to delete the original note and move it to the trash?',
     selectedCount: '{count} selected',
     clearSelection: 'Clear selection',
     zoomIn: 'Zoom in',
@@ -222,17 +221,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     emailPlaceholder: 'your@email.com',
     password: 'Password',
     anErrorOccurred: 'An error occurred',
-    localNotesSyncAfterLogin:
-      'Your local notes will be automatically synced after signing in',
+    localNotesSyncAfterLogin: 'Your local notes will be automatically synced after signing in',
     professionalNoteApp: 'Professional note-taking application',
     authInvalidCredentials: 'Incorrect email or password. Please check your credentials.',
-    authEmailNotConfirmed:
-      "Your email has not been confirmed. Please check your inbox.",
+    authEmailNotConfirmed: 'Your email has not been confirmed. Please check your inbox.',
     authUserNotFound: 'No account found with this email.',
     authEmailAlreadyRegistered: 'An account already exists with this email.',
     authPasswordTooShort: 'The password must contain at least 6 characters.',
-    authNetworkError:
-      'Connection problem. Please check your internet connection.',
+    authNetworkError: 'Connection problem. Please check your internet connection.',
     authRateLimit: 'Too many attempts. Please try again later.',
     authInvalidEmail: 'The email address is not valid.',
     authGenericError: 'An error occurred. Please try again.',
@@ -241,11 +237,11 @@ export const translations: Record<Lang, Record<string, string>> = {
     noNoteOrEmpty: 'No note selected or note is empty',
     summaryGenerationError: 'Error generating the summary',
     mistralNotConfigured:
-      "⚠️ Missing configuration: The Mistral API key is not configured on the Supabase server. Please follow the setup instructions in the documentation.",
+      '⚠️ Missing configuration: The Mistral API key is not configured on the Supabase server. Please follow the setup instructions in the documentation.',
     mistralKeyInvalid:
       '🔑 Invalid API key: The configured Mistral API key is invalid or expired. Please check it in the Supabase console.',
     mistralQuotaExceeded:
-      "⏱️ Quota exceeded: API usage limit reached. Please try again later or upgrade your Mistral plan.",
+      '⏱️ Quota exceeded: API usage limit reached. Please try again later or upgrade your Mistral plan.',
     tagsGenerationError: 'Error generating tags',
     enterBrainstormTopic: 'Please enter a brainstorming topic',
     brainstormError: 'Error during brainstorming',
@@ -273,8 +269,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     suggestedTags: 'Suggested tags',
     applyTags: 'Apply tags',
     currentTags: 'Current tags',
-    discoverSimilarNotes:
-      'Discover similar notes and create connections automatically.',
+    discoverSimilarNotes: 'Discover similar notes and create connections automatically.',
     analyzing: 'Analyzing...',
     detectLinks: 'Detect links',
     suggestedLinkedNotes: 'Suggested linked notes',
@@ -312,8 +307,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     aiServiceUnavailable: 'AI service unavailable',
     generationCancelled: 'Generation cancelled',
     generationCancelledByUser: 'Generation cancelled by the user.',
-    unexpectedSummaryError:
-      'An unexpected error occurred while generating the summary.',
+    unexpectedSummaryError: 'An unexpected error occurred while generating the summary.',
     justNow: 'Just now',
     minutesAgo: '{count} min ago',
     hoursAgo: '{count}h ago',
@@ -364,8 +358,7 @@ export const translations: Record<Lang, Record<string, string>> = {
       'Your notes are sent directly to Mistral AI (api.mistral.ai) only when using AI features. Your key stays on your device; no JemaNote server sees these exchanges.',
     mistralKeyInvalidUnavailable:
       'The Mistral API key is invalid or expired. The AI service is temporarily unavailable.',
-    cannotReachMistral:
-      'Unable to reach the Mistral API. Check your internet connection.',
+    cannotReachMistral: 'Unable to reach the Mistral API. Check your internet connection.',
     aiServiceUnavailableWithError: 'AI service unavailable: {error}',
     aiServiceConfigProblem: 'The AI service has a configuration problem.',
 
@@ -427,28 +420,33 @@ export const translations: Record<Lang, Record<string, string>> = {
     play: 'Play',
     playback: 'Play',
     saveMemo: 'Save memo',
-    noAudioRecorded:
-      'Error: No audio recorded. Check that your microphone is working.',
+    noAudioRecorded: 'Error: No audio recorded. Check that your microphone is working.',
     micAccessError: 'Unable to access the microphone. Check the permissions.',
 
     // InstallPrompt
     installJemanote: 'Install Jemanote',
-    installDesc:
-      'Install the app for quick access and an optimal experience, even offline.',
+    installDesc: 'Install the app for quick access and an optimal experience, even offline.',
     install: 'Install',
     later: 'Later',
 
     // SubscriptionGuard
-    subscriptionRequired:
-      'This application requires a JemaOS Pro subscription.',
+    subscriptionRequired: 'This application requires a JemaOS Pro subscription.',
     upgradeToPro: 'Upgrade to Pro',
     reconnect: 'Sign in again',
     reconnecting: 'Reconnecting…',
     reconnectFailed: 'Reconnection failed. Try again in a moment.',
     guardLoading: 'Loading…',
     reconnectingInProgress: 'Reconnecting…',
-    verifyingSession:
-      'Verifying your JemaOS session. You will be redirected automatically.',
+    verifyingSession: 'Verifying your JemaOS session. You will be redirected automatically.',
+    loginAccountLabel: 'Jema account',
+    loginAccountPlaceholder: 'name@example.com',
+    loginPasswordLabel: 'Password',
+    loginSubmit: 'Sign in with Jema',
+    loginSubmitting: 'Signing in…',
+    loginErrorCaptcha: 'Anti-robot verification required. Please try again.',
+    loginErrorCaptchaTurnstile:
+      'Anti-robot verification required. Complete the CAPTCHA and try again.',
+    loginErrorGeneric: 'Sign-in failed. Please check your Jema credentials.',
   },
 
   fr: {
@@ -533,16 +531,14 @@ export const translations: Record<Lang, Record<string, string>> = {
       'Cette action est irréversible. Supprimer définitivement le dossier "{name}" ?',
     deleteSelectedFoldersConfirmWithNotes:
       'Supprimer {count} dossier(s) sélectionné(s) ? Les {countNotes} note(s) seront déplacées vers la corbeille.',
-    deleteSelectedEmptyFoldersConfirm:
-      'Supprimer {count} dossier(s) vide(s) sélectionné(s) ?',
+    deleteSelectedEmptyFoldersConfirm: 'Supprimer {count} dossier(s) vide(s) sélectionné(s) ?',
     deleteSelectedNotesConfirm: 'Supprimer {count} note(s) sélectionnée(s) ?',
     emptyTrashConfirm:
       'Cette action est irréversible. Supprimer définitivement {count} élément(s) de la corbeille ?',
     deleteSelectedItemsConfirm:
       'Cette action est irréversible. Supprimer définitivement {count} élément(s) sélectionné(s) ?',
     deleteNoteConfirm: 'Êtes-vous sûr de vouloir supprimer cette note ?',
-    deletePermanentlyConfirm:
-      'Cette action est irréversible. Supprimer définitivement ?',
+    deletePermanentlyConfirm: 'Cette action est irréversible. Supprimer définitivement ?',
     moveTo: 'Déplacer vers...',
     noteAriaLabel: 'Note: {title}',
 
@@ -563,8 +559,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // WorkspaceView
     noNoteSelected: 'Aucune note sélectionnée',
-    selectOrCreateNote:
-      'Sélectionnez une note dans la barre latérale ou créez-en une nouvelle',
+    selectOrCreateNote: 'Sélectionnez une note dans la barre latérale ou créez-en une nouvelle',
     noteIsLong: 'Votre note est assez longue !',
     generateSummaryWithAI: "Générez un résumé automatique avec l'IA.",
     generate: 'Générer',
@@ -642,8 +637,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     drawingArea: 'Zone de dessin',
     emptyCanvas: 'Canvas vide',
     emptyCanvasHint: 'Cliquez sur le bouton + pour ajouter des éléments',
-    emptyCanvasPanHint:
-      'Glissez pour déplacer la vue, utilisez les contrôles pour zoomer',
+    emptyCanvasPanHint: 'Glissez pour déplacer la vue, utilisez les contrôles pour zoomer',
 
     // CommandPalette
     closeCommandPalette: 'Fermer la palette de commandes',
@@ -657,8 +651,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Auth
     signUp: "S'inscrire",
-    cloudSyncDesc:
-      'Connectez-vous pour synchroniser vos notes sur tous vos appareils',
+    cloudSyncDesc: 'Connectez-vous pour synchroniser vos notes sur tous vos appareils',
     email: 'Email',
     emailPlaceholder: 'votre@email.com',
     password: 'Mot de passe',
@@ -666,15 +659,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     localNotesSyncAfterLogin:
       'Vos notes locales seront automatiquement synchronisées après connexion',
     professionalNoteApp: 'Application de prise de notes professionnelle',
-    authInvalidCredentials:
-      'Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.',
+    authInvalidCredentials: 'Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.',
     authEmailNotConfirmed:
       "Votre email n'a pas été confirmé. Veuillez vérifier votre boîte de réception.",
     authUserNotFound: 'Aucun compte trouvé avec cet email.',
     authEmailAlreadyRegistered: 'Un compte existe déjà avec cet email.',
     authPasswordTooShort: 'Le mot de passe doit contenir au moins 6 caractères.',
-    authNetworkError:
-      'Problème de connexion. Veuillez vérifier votre connexion internet.',
+    authNetworkError: 'Problème de connexion. Veuillez vérifier votre connexion internet.',
     authRateLimit: 'Trop de tentatives. Veuillez réessayer plus tard.',
     authInvalidEmail: "L'adresse email n'est pas valide.",
     authGenericError: 'Une erreur est survenue. Veuillez réessayer.',
@@ -715,8 +706,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     suggestedTags: 'Tags suggérés',
     applyTags: 'Appliquer les tags',
     currentTags: 'Tags actuels',
-    discoverSimilarNotes:
-      'Découvrez des notes similaires et créez des connexions automatiquement.',
+    discoverSimilarNotes: 'Découvrez des notes similaires et créez des connexions automatiquement.',
     analyzing: 'Analyse en cours...',
     detectLinks: 'Détecter les liens',
     suggestedLinkedNotes: 'Notes liées suggérées',
@@ -754,8 +744,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     aiServiceUnavailable: 'Service IA non disponible',
     generationCancelled: 'Génération annulée',
     generationCancelledByUser: "Génération annulée par l'utilisateur.",
-    unexpectedSummaryError:
-      "Une erreur inattendue s'est produite lors de la génération du résumé.",
+    unexpectedSummaryError: "Une erreur inattendue s'est produite lors de la génération du résumé.",
     justNow: "À l'instant",
     minutesAgo: 'Il y a {count} min',
     hoursAgo: 'Il y a {count}h',
@@ -793,8 +782,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     summaryHistory: 'Historique des résumés',
     clearCache: 'Vider le cache',
     clearHistory: "Vider l'historique",
-    cacheInfo:
-      'Les réponses sont mises en cache 24h pour améliorer les performances',
+    cacheInfo: 'Les réponses sont mises en cache 24h pour améliorer les performances',
     availableAIFeatures: 'Fonctionnalités IA disponibles:',
     featureAutoSummaries: 'Résumés automatiques (court, détaillé, bullets)',
     featureSummaryHistory: 'Historique des résumés avec réutilisation',
@@ -807,11 +795,9 @@ export const translations: Record<Lang, Record<string, string>> = {
       "Vos notes sont envoyées directement à Mistral AI (api.mistral.ai) uniquement lors de l'utilisation des fonctionnalités IA. Votre clé reste sur votre appareil ; aucun serveur JemaNote ne voit ces échanges.",
     mistralKeyInvalidUnavailable:
       'La clé API Mistral est invalide ou expirée. Le service IA est temporairement indisponible.',
-    cannotReachMistral:
-      "Impossible de contacter l'API Mistral. Vérifiez votre connexion internet.",
+    cannotReachMistral: "Impossible de contacter l'API Mistral. Vérifiez votre connexion internet.",
     aiServiceUnavailableWithError: 'Service IA indisponible : {error}',
-    aiServiceConfigProblem:
-      'Le service IA rencontre un problème de configuration.',
+    aiServiceConfigProblem: 'Le service IA rencontre un problème de configuration.',
 
     // AI account connection (per-user Mistral account)
     connectMistralAccount: 'Connecter mon compte Mistral',
@@ -869,10 +855,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     play: 'Lire',
     playback: 'Lecture',
     saveMemo: 'Enregistrer le mémo',
-    noAudioRecorded:
-      'Erreur: Aucun audio enregistré. Vérifiez que votre microphone fonctionne.',
-    micAccessError:
-      "Impossible d'accéder au microphone. Vérifiez les permissions.",
+    noAudioRecorded: 'Erreur: Aucun audio enregistré. Vérifiez que votre microphone fonctionne.',
+    micAccessError: "Impossible d'accéder au microphone. Vérifiez les permissions.",
 
     // InstallPrompt
     installJemanote: 'Installer Jemanote',
@@ -882,8 +866,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     later: 'Plus tard',
 
     // SubscriptionGuard
-    subscriptionRequired:
-      'Cette application nécessite un abonnement JemaOS Pro.',
+    subscriptionRequired: 'Cette application nécessite un abonnement JemaOS Pro.',
     upgradeToPro: 'Passer à Pro',
     reconnect: 'Se reconnecter',
     reconnecting: 'Reconnexion…',
@@ -892,6 +875,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     reconnectingInProgress: 'Reconnexion en cours…',
     verifyingSession:
       'Vérification de votre session JemaOS. Vous allez être redirigé automatiquement.',
+    loginAccountLabel: 'Compte Jema',
+    loginAccountPlaceholder: 'nom@exemple.com',
+    loginPasswordLabel: 'Mot de passe',
+    loginSubmit: 'Se connecter avec Jema',
+    loginSubmitting: 'Connexion…',
+    loginErrorCaptcha: 'Vérification anti-robot requise. Réessayez.',
+    loginErrorCaptchaTurnstile: 'Vérification anti-robot requise. Validez le CAPTCHA et réessayez.',
+    loginErrorGeneric: 'Connexion impossible. Vérifiez vos identifiants Jema.',
   },
 };
 
@@ -922,8 +913,7 @@ export function lookupTranslation(lang: Lang, key: string): string | undefined {
 
 // Translation function for non-React code (services, etc.)
 export function translate(key: string, params?: TranslationParams): string {
-  const value =
-    lookupTranslation(currentLang, key) ?? lookupTranslation('en', key) ?? key;
+  const value = lookupTranslation(currentLang, key) ?? lookupTranslation('en', key) ?? key;
   return formatTemplate(value, params);
 }
 
